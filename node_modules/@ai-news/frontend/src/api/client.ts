@@ -1,6 +1,6 @@
 import { Article, Tool, Trend, Stats, NewsQueryParams, RefreshResult, AiCategory } from '@ai-news/shared';
 
-const API_BASE = '/api';
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
 
 export async function fetchHealth(): Promise<{ status: string; timestamp: string }> {
   const res = await fetch(`${API_BASE}/health`);
