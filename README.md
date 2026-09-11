@@ -45,6 +45,17 @@ Copy `.env.example` to `.env` and configure:
 - `GDELT_API_URL` — GDELT DOC API URL
 - `FRONTEND_URL` — Frontend URL for CORS
 
+## Vercel Deployment
+
+The Vercel project should deploy only `packages/frontend`:
+
+- Build command: `npm run build:frontend`
+- Output directory: `packages/frontend/dist`
+- Install command: `npm install --include-workspace-root --workspace=packages/frontend --workspace=packages/shared`
+- Set `VITE_API_BASE_URL` to the deployed backend origin, for example `https://your-backend.example.com/api`.
+
+The Express + SQLite backend is not a Vercel serverless service in this repository. Deploy it to a long-running host such as Render, Railway, Fly.io, or a VM, then point `VITE_API_BASE_URL` at that origin.
+
 ## API Endpoints
 
 - `GET /api/health` — Health check
