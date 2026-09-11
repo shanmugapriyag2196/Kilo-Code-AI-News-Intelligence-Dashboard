@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
-  "installCommand": "npm ci --include-workspace-root --workspace=packages/frontend --workspace=packages/shared",
+  "installCommand": "npm ci --include-workspace-root --workspace=@ai-news/frontend --workspace=@ai-news/shared",
   "buildCommand": "npm run build:frontend",
   "outputDirectory": "packages/frontend/dist"
 }

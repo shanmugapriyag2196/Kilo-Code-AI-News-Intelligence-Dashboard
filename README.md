@@ -38,9 +38,9 @@ Copy `.env.example` to `.env` and configure:
 
 - `PORT` — Backend port (default: 3001)
 - `DATABASE_PATH` — SQLite database path
-- `OPENAI_BASE_URL` — OpenAI-compatible API base URL
-- `OPENAI_API_KEY` — API key for AI services
-- `OPENAI_MODEL` — Model name (default: gpt-4o-mini)
+- `GROQ_BASE_URL` — Groq API base URL
+- `GROQ_API_KEY` — Groq API key for AI services
+- `GROQ_MODEL` — Groq model name (default: llama-3.3-70b-versatile)
 - `REFRESH_INTERVAL_MINUTES` — Auto-refresh interval (default: 30)
 - `GDELT_API_URL` — GDELT DOC API URL
 - `FRONTEND_URL` — Frontend URL for CORS
@@ -51,7 +51,7 @@ The Vercel project should deploy only `packages/frontend`:
 
 - Build command: `npm run build:frontend`
 - Output directory: `packages/frontend/dist`
-- Install command: `npm install --include-workspace-root --workspace=packages/frontend --workspace=packages/shared`
+- Install command: `npm ci --include-workspace-root --workspace=@ai-news/frontend --workspace=@ai-news/shared`
 - Set `VITE_API_BASE_URL` to the deployed backend origin, for example `https://your-backend.example.com/api`.
 
 The Express + SQLite backend is not a Vercel serverless service in this repository. Deploy it to a long-running host such as Render, Railway, Fly.io, or a VM, then point `VITE_API_BASE_URL` at that origin.

@@ -41,7 +41,7 @@ app.use('/api/refresh', refreshRoutes);
 const PORT = config.port;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
-  const ai = new AIService({ baseUrl: config.openaiBaseUrl, apiKey: config.openaiApiKey, model: config.openaiModel });
+  const ai = new AIService({ baseUrl: config.groqBaseUrl, apiKey: config.groqApiKey, model: config.groqModel });
   console.log(`AI Service available: ${ai.isAvailable()}`);
   startScheduler(config, () => refreshNews(config));
 });

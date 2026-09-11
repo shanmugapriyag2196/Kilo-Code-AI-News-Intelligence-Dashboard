@@ -1,27 +1,30 @@
-import OpenAI from 'openai';
+type ChatMessage = { role: 'system' | 'user' | 'assistant'; content: string };
+
+interface ChatCompletionResponse {
+  choices?: Array<{ message?: { content?: string | null } | null } | null>;
+}
 
 export class AIService {
-  private client: OpenAI | null = null;
+  private readonly baseUrl: string;
+  private readonly apiKey: string;
+  private readonly model: string;
 
-  constructor(private config: { baseUrl: string; apiKey: string; model: string }) {
-    if (config.apiKey) {
-      this.client = new OpenAI({ baseURL: config.baseUrl, apiKey: config.apiKey });
-    }
+  constructor(config: { baseUrl: string; apiKey: string; model: string }) {
+    this.baseUrl = config.baseUrl;
+    this.apiKey = config.apiKey;
+    this.model = config.model;
   }
 
   isAvailable(): boolean {
-    return this.client !== null;
+    return Boolean(this.apiKey);
   }
 
   async generateSummary(content: string, title: string): Promise<string | null> {
-    if (!this.client || !content || content.length < 100) return null;
+    if (!content || content.length < 100) return null;
 
     try {
-      const response = await this.client.chat.completions.create({
-        model: this.config.model,
-        max_tokens: 200,
-        temperature: 0.3,
-        messages: [
+      const text = await this.chat(
+        [
           {
             role: 'system',
             content: 'Summarize the following AI-related article in 1-2 concise sentences. Focus on the key news or development. Be factual and specific.',
@@ -31,8 +34,9 @@ export class AIService {
             content: `Title: ${title}\n\nContent: ${content.slice(0, 6000)}`,
           },
         ],
-      });
-      return response.choices[0]?.message?.content?.trim() || null;
+        { maxTokens: 200, temperature: 0.3 }
+      );
+      return text?.trim() || null;
     } catch {
       return null;
     }
@@ -41,14 +45,11 @@ export class AIService {
   async classifyArticle(title: string, content: string): Promise<{ category: string; subcategory: string | null }> {
     const fallback = deterministicCategory(title, content);
 
-    if (!this.client || !content) return fallback;
+    if (!content) return fallback;
 
     try {
-      const response = await this.client.chat.completions.create({
-        model: this.config.model,
-        max_tokens: 60,
-        temperature: 0.1,
-        messages: [
+      const text = await this.chat(
+        [
           {
             role: 'system',
             content: `Classify this AI article into one of these categories: ${AI_CATEGORIES.join(', ')}. Respond with JSON: {"category": "...", "subcategory": "..."}`,
@@ -58,14 +59,14 @@ export class AIService {
             content: `Title: ${title}\n\n${content.slice(0, 3000)}`,
           },
         ],
-      });
+        { maxTokens: 60, temperature: 0.1 }
+      );
 
-      const text = response.choices[0]?.message?.content?.trim() || '{}';
-      const match = text.match(/\{.*\}/s);
+      const match = (text || '').match(/\{.*\}/s);
       if (match) {
-        const parsed = JSON.parse(match[0]);
+        const parsed = JSON.parse(match[0]) as { category?: string; subcategory?: string | null };
         const category = parsed.category;
-        if (AI_CATEGORIES.includes(category)) {
+        if (category && AI_CATEGORIES.includes(category as (typeof AI_CATEGORIES)[number])) {
           return { category, subcategory: parsed.subcategory || null };
         }
       }
@@ -76,24 +77,7 @@ export class AIService {
   }
 
   async computeSimilarity(text1: string, text2: string): Promise<number> {
-    if (!this.client) return deterministicSimilarity(text1, text2);
-
-    try {
-      const emb1 = await this.getEmbedding(text1);
-      const emb2 = await this.getEmbedding(text2);
-      return cosineSimilarity(emb1, emb2);
-    } catch {
-      return deterministicSimilarity(text1, text2);
-    }
-  }
-
-  private async getEmbedding(text: string): Promise<number[]> {
-    if (!this.client) return [];
-    const response = await this.client.embeddings.create({
-      model: 'text-embedding-3-small',
-      input: text.slice(0, 8000),
-    });
-    return response.data[0]?.embedding || [];
+    return deterministicSimilarity(text1, text2);
   }
 
   async computeTrendingScore(article: { title: string; content: string; sourceDomain: string; publishedAt: string }): Promise<number> {
@@ -120,18 +104,32 @@ export class AIService {
 
     return Math.min(score, 100);
   }
-}
 
-function cosineSimilarity(a: number[], b: number[]): number {
-  if (a.length !== b.length || a.length === 0) return 0;
-  let dot = 0, normA = 0, normB = 0;
-  for (let i = 0; i < a.length; i++) {
-    dot += a[i] * b[i];
-    normA += a[i] * a[i];
-    normB += b[i] * b[i];
+  private async chat(messages: ChatMessage[], options: { maxTokens: number; temperature: number }): Promise<string | null> {
+    if (!this.apiKey) return null;
+
+    const endpoint = this.baseUrl.replace(/\/$/, '') + '/chat/completions';
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: this.model,
+        messages,
+        max_tokens: options.maxTokens,
+        temperature: options.temperature,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Groq API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = (await response.json()) as ChatCompletionResponse;
+    return data.choices?.[0]?.message?.content ?? null;
   }
-  const denom = Math.sqrt(normA) * Math.sqrt(normB);
-  return denom === 0 ? 0 : dot / denom;
 }
 
 const AI_CATEGORIES = [

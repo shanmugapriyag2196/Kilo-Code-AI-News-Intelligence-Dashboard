@@ -15,7 +15,7 @@ let gdeltAdapter: GDELTAdapter | null = null;
 export function initNewsRoutes(config: EnvConfig) {
   const db = getDb(config);
   storage = new StorageService(db);
-  aiService = new AIService({ baseUrl: config.openaiBaseUrl, apiKey: config.openaiApiKey, model: config.openaiModel });
+  aiService = new AIService({ baseUrl: config.groqBaseUrl, apiKey: config.groqApiKey, model: config.groqModel });
   gdeltAdapter = new GDELTAdapter(config.gdeltApiUrl);
 
   const router = Router();
@@ -46,7 +46,7 @@ export function initNewsRoutes(config: EnvConfig) {
 export async function refreshNews(config: EnvConfig): Promise<{ success: boolean; articlesFetched: number; articlesNew: number; articlesDuplicated: number; error: string | null; timestamp: string }> {
   const db = getDb(config);
   if (!storage) storage = new StorageService(db);
-  if (!aiService) aiService = new AIService({ baseUrl: config.openaiBaseUrl, apiKey: config.openaiApiKey, model: config.openaiModel });
+  if (!aiService) aiService = new AIService({ baseUrl: config.groqBaseUrl, apiKey: config.groqApiKey, model: config.groqModel });
   if (!gdeltAdapter) gdeltAdapter = new GDELTAdapter(config.gdeltApiUrl);
 
   const dedup = new DedupService(aiService);

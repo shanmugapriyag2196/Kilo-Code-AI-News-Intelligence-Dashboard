@@ -13,7 +13,7 @@ export function createStatsRoutes(config: import('../config').EnvConfig) {
       refreshIntervalMinutes: config.refreshIntervalMinutes,
       sourceAdapter: 'GDELT DOC API',
     });
-    const ai = new AIService({ baseUrl: config.openaiBaseUrl, apiKey: config.openaiApiKey, model: config.openaiModel });
+    const ai = new AIService({ baseUrl: config.groqBaseUrl, apiKey: config.groqApiKey, model: config.groqModel });
     stats.aiAvailable = ai.isAvailable();
     res.json(stats);
   });

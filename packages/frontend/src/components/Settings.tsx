@@ -50,14 +50,14 @@ export function SettingsView({ onBack }: SettingsProps) {
         </div>
         <div className="settings-section">
           <h3 className="settings-section-title">AI Configuration</h3>
-          <div className="settings-item">
-            <div className="settings-item-label">AI Status</div>
-            <div className="settings-item-value ai-status">
-              <span className={`status-dot ${stats?.aiAvailable ? '' : 'muted'}`} />
-              <span>{stats?.aiAvailable ? 'Active (OpenAI-compatible)' : 'Inactive — set OPENAI_API_KEY'}</span>
+<div className="settings-item">
+              <div className="settings-item-label">AI Status</div>
+              <div className="settings-item-value ai-status">
+                <span className={`status-dot ${stats?.aiAvailable ? '' : 'muted'}`} />
+                <span>{stats?.aiAvailable ? 'Active (Groq)' : 'Inactive — set GROQ_API_KEY'}</span>
+              </div>
+              <p className="settings-item-desc">AI features (summaries, categorization, deduplication) require a Groq API key.</p>
             </div>
-            <p className="settings-item-desc">AI features (summaries, categorization, deduplication) require an OpenAI-compatible API key.</p>
-          </div>
         </div>
         <div className="settings-section">
           <h3 className="settings-section-title">Storage</h3>
