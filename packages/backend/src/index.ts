@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { loadConfig } from './config';
-import { getDb } from './services/database';
+import { getAirtable } from './services/database';
 import { initNewsRoutes, refreshNews } from './routes/news';
 import { createToolsRoutes } from './routes/tools';
 import { createTrendsRoutes } from './routes/trends';
@@ -11,6 +11,7 @@ import { createSavedRoutes } from './routes/saved';
 import { createRefreshRoutes } from './routes/refresh';
 import { startScheduler } from './services/scheduler';
 import { AIService } from './services/ai';
+import { asyncHandler } from './middleware/asyncHandler';
 
 const config = loadConfig();
 
@@ -18,18 +19,20 @@ const app = express();
 app.use(cors({ origin: config.frontendUrl, credentials: true }));
 app.use(express.json());
 
-app.get('/api/health', (_req, res) => {
+app.get('/api/health', asyncHandler(async (_req, res) => {
   try {
-    getDb(config);
+    await getAirtable(config).table(config.airtableArticlesTable).select({ maxRecords: 1 }).firstPage();
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
-  } catch {
-    res.status(500).json({ status: 'error', error: 'Database unavailable' });
+  } catch (err) {
+    res.status(500).json({
+      status: 'error',
+      error: 'Airtable unavailable',
+      detail: err instanceof Error ? err.message : undefined,
+    });
   }
-});
+}));
 
-const newsRoutes = initNewsRoutes(config);
-app.use('/api/news', newsRoutes);
-
+app.use('/api/news', initNewsRoutes(config));
 app.use('/api/tools', createToolsRoutes(config));
 app.use('/api/trends', createTrendsRoutes(config));
 app.use('/api/stats', createStatsRoutes(config));

@@ -1,6 +1,11 @@
 export interface EnvConfig {
   port: number;
-  databasePath: string;
+  airtableApiKey: string;
+  airtableBaseId: string;
+  airtableArticlesTable: string;
+  airtableToolsTable: string;
+  airtableTrendsTable: string;
+  airtableRefreshLogTable: string;
   groqBaseUrl: string;
   groqApiKey: string;
   groqModel: string;
@@ -13,7 +18,12 @@ export interface EnvConfig {
 export function loadConfig(): EnvConfig {
   return {
     port: parseInt(process.env.PORT || '3001', 10),
-    databasePath: process.env.DATABASE_PATH || './data/news.db',
+    airtableApiKey: process.env.AIRTABLE_API_KEY || process.env.AIRTABLE_PERSONAL_ACCESS_TOKEN || '',
+    airtableBaseId: process.env.AIRTABLE_BASE_ID || '',
+    airtableArticlesTable: process.env.AIRTABLE_ARTICLES_TABLE || 'Articles',
+    airtableToolsTable: process.env.AIRTABLE_TOOLS_TABLE || 'Tools',
+    airtableTrendsTable: process.env.AIRTABLE_TRENDS_TABLE || 'Trends',
+    airtableRefreshLogTable: process.env.AIRTABLE_REFRESH_LOG_TABLE || 'RefreshLog',
     groqBaseUrl: process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1',
     groqApiKey: process.env.GROQ_API_KEY || '',
     groqModel: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',

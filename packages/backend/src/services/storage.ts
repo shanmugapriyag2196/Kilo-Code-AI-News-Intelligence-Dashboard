@@ -1,63 +1,166 @@
-import { getDb } from './database';
+import Airtable from 'airtable';
 import { Article, Tool, Trend, Stats, RefreshResult } from '@ai-news/shared';
 import { v4 as uuidv4 } from 'uuid';
+import { EnvConfig } from '../config';
+
+type AirtableRecord<T extends Airtable.FieldSet> = {
+  id: string;
+  fields: T;
+  createdTime: string;
+};
+
+type AirtableTableOps<T extends Airtable.FieldSet> = {
+  select(params?: Airtable.SelectOptions<T>): {
+    all(): Promise<AirtableRecord<T>[]>;
+    firstPage(): Promise<AirtableRecord<T>[]>;
+  };
+  update(recordId: string, recordData: { fields: Partial<T> }, opts?: { typecast?: boolean }): Promise<unknown>;
+  create(recordData: { fields: Partial<T> }, opts?: { typecast?: boolean }): Promise<unknown>;
+  destroy(recordId: string): Promise<unknown>;
+};
+
+interface ArticleFields extends Airtable.FieldSet {
+  id: string;
+  title: string;
+  url: string;
+  sourceName: string;
+  sourceDomain: string;
+  publishedAt: string;
+  fetchedAt: string;
+  content?: string;
+  summary?: string;
+  category?: string;
+  subcategory?: string;
+  trendingScore?: number;
+  duplicateGroupId?: string;
+  isLead?: boolean;
+  language?: string;
+  thumbnailUrl?: string;
+  relatedArticleIds?: string;
+  isSaved?: boolean;
+}
+
+interface ToolFields extends Airtable.FieldSet {
+  id: string;
+  name: string;
+  description?: string;
+  url?: string;
+  category?: string;
+  trendingScore?: number;
+  mentions?: number;
+  lastMentioned?: string;
+  sourceArticles?: string;
+  logoUrl?: string;
+}
+
+interface TrendFields extends Airtable.FieldSet {
+  id: string;
+  topic: string;
+  category?: string;
+  mentionCount?: number;
+  sentiment?: string;
+  relatedArticleIds?: string;
+  trendDirection?: string;
+  period?: string;
+}
+
+interface RefreshLogFields extends Airtable.FieldSet {
+  id: string;
+  success: boolean;
+  articlesFetched?: number;
+  articlesNew?: number;
+  articlesDuplicated?: number;
+  error?: string;
+  timestamp: string;
+}
+
+type ArticleRecordData = { fields: Partial<ArticleFields> };
+type ToolRecordData = { fields: Partial<ToolFields> };
+type TrendRecordData = { fields: Partial<TrendFields> };
+type RefreshLogRecordData = { fields: Partial<RefreshLogFields> };
 
 export class StorageService {
-  constructor(private db: ReturnType<typeof getDb>) {}
+  constructor(
+    private base: Airtable.Base,
+    private tables: Pick<EnvConfig, 'airtableArticlesTable' | 'airtableToolsTable' | 'airtableTrendsTable' | 'airtableRefreshLogTable'>,
+  ) {}
 
-  private mapRow(row: Record<string, unknown>): Article {
+  private articlesTable(): AirtableTableOps<ArticleFields> {
+    return this.base.table<ArticleFields>(this.tables.airtableArticlesTable) as unknown as AirtableTableOps<ArticleFields>;
+  }
+
+  private toolsTable(): AirtableTableOps<ToolFields> {
+    return this.base.table<ToolFields>(this.tables.airtableToolsTable) as unknown as AirtableTableOps<ToolFields>;
+  }
+
+  private trendsTable(): AirtableTableOps<TrendFields> {
+    return this.base.table<TrendFields>(this.tables.airtableTrendsTable) as unknown as AirtableTableOps<TrendFields>;
+  }
+
+  private refreshLogTable(): AirtableTableOps<RefreshLogFields> {
+    return this.base.table<RefreshLogFields>(this.tables.airtableRefreshLogTable) as unknown as AirtableTableOps<RefreshLogFields>;
+  }
+
+  private async listRecords<T extends Airtable.FieldSet>(
+    table: AirtableTableOps<T>,
+    params?: Airtable.SelectOptions<T>,
+  ): Promise<AirtableRecord<T>[]> {
+    return (await table.select(params).all()) as unknown as AirtableRecord<T>[];
+  }
+
+  private async findRecord<T extends Airtable.FieldSet>(
+    table: AirtableTableOps<T>,
+    filterByFormula: string,
+  ): Promise<AirtableRecord<T> | null> {
+    const records = (await table.select({ filterByFormula, maxRecords: 1 }).firstPage()) as unknown as AirtableRecord<T>[];
+    return records[0] || null;
+  }
+
+  private mapArticle(record: AirtableRecord<ArticleFields>): Article {
+    const fields = record.fields;
     return {
-      id: row.id as string,
-      title: row.title as string,
-      url: row.url as string,
-      sourceName: row.source_name as string,
-      sourceDomain: row.source_domain as string,
-      publishedAt: row.published_at as string,
-      fetchedAt: row.fetched_at as string,
-      content: (row.content as string) || '',
-      summary: (row.summary as string) || '',
-      category: (row.category as string) || 'Other AI Tools',
-      subcategory: (row.subcategory as string) || null,
-      trendingScore: (row.trending_score as number) || 0,
-      duplicateGroupId: (row.duplicate_group_id as string) || null,
-      isLead: !!(row.is_lead as number),
-      language: (row.language as string) || 'en',
-      thumbnailUrl: (row.thumbnail_url as string) || null,
-      relatedArticleIds: JSON.parse((row.related_article_ids as string) || '[]'),
-      isSaved: !!(row.is_saved as number),
+      id: fields.id || record.id,
+      title: fields.title || 'Untitled',
+      url: fields.url || '',
+      sourceName: fields.sourceName || 'Unknown',
+      sourceDomain: fields.sourceDomain || '',
+      publishedAt: fields.publishedAt || new Date(0).toISOString(),
+      fetchedAt: fields.fetchedAt || fields.publishedAt || new Date(0).toISOString(),
+      content: fields.content || '',
+      summary: fields.summary || '',
+      category: fields.category || 'Other AI Tools',
+      subcategory: fields.subcategory || null,
+      trendingScore: Number(fields.trendingScore) || 0,
+      duplicateGroupId: fields.duplicateGroupId || null,
+      isLead: Boolean(fields.isLead),
+      language: fields.language || 'en',
+      thumbnailUrl: fields.thumbnailUrl || null,
+      relatedArticleIds: parseStringArray(fields.relatedArticleIds),
+      isSaved: Boolean(fields.isSaved),
     };
   }
 
-  upsertArticle(article: Partial<Article> & { url: string }): Article | null {
-    const existing = this.db.prepare('SELECT * FROM articles WHERE url = ?').get(article.url) as Record<string, unknown> | undefined;
+  async upsertArticle(article: Partial<Article> & { url: string }): Promise<Article | null> {
+    const existing = await this.findRecord(this.articlesTable(), formulaEquals('url', article.url));
     const now = new Date().toISOString();
 
     if (existing) {
-      this.db.prepare(`
-        UPDATE articles SET
-          trending_score = COALESCE(?, trending_score),
-          summary = COALESCE(?, summary),
-          category = COALESCE(?, category),
-          subcategory = COALESCE(?, subcategory),
-          content = COALESCE(?, content),
-          duplicate_group_id = COALESCE(?, duplicate_group_id),
-          related_article_ids = ?,
-          is_lead = COALESCE(?, is_lead),
-          fetched_at = ?
-        WHERE id = ?
-      `).run(
-        article.trendingScore ?? existing.trending_score,
-        article.summary ?? existing.summary,
-        article.category ?? existing.category,
-        article.subcategory ?? existing.subcategory,
-        article.content ?? null,
-        article.duplicateGroupId ?? existing.duplicate_group_id,
-        JSON.stringify(article.relatedArticleIds ?? JSON.parse((existing.related_article_ids as string) || '[]')),
-        article.isLead ? 1 : existing.is_lead,
-        now,
-        existing.id,
-      );
-      return this.mapRow(this.db.prepare('SELECT * FROM articles WHERE id = ?').get(existing.id) as Record<string, unknown>);
+      const fields: Partial<ArticleFields> = {
+        trendingScore: article.trendingScore ?? existing.fields.trendingScore,
+        summary: article.summary ?? existing.fields.summary,
+        category: article.category ?? existing.fields.category,
+        subcategory: article.subcategory ?? existing.fields.subcategory,
+        content: article.content ?? existing.fields.content,
+        duplicateGroupId: article.duplicateGroupId ?? existing.fields.duplicateGroupId,
+        relatedArticleIds: JSON.stringify(article.relatedArticleIds ?? parseStringArray(existing.fields.relatedArticleIds)),
+        isLead: article.isLead ? true : existing.fields.isLead,
+        fetchedAt: now,
+      };
+      await this.articlesTable().update(existing.id, { fields: compactFields(fields) } as ArticleRecordData, { typecast: true });
+      return this.mapArticle({
+        ...existing,
+        fields: { ...existing.fields, ...compactFields(fields) },
+      } as AirtableRecord<ArticleFields>);
     }
 
     const id = article.id || uuidv4();
@@ -82,123 +185,124 @@ export class StorageService {
       isSaved: article.isSaved || false,
     };
 
-    this.db.prepare(`
-      INSERT INTO articles (id, title, url, source_name, source_domain, published_at, fetched_at,
-        content, summary, category, subcategory, trending_score, duplicate_group_id, is_lead,
-        language, thumbnail_url, related_article_ids, is_saved)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      newArticle.id, newArticle.title, newArticle.url, newArticle.sourceName,
-      newArticle.sourceDomain, newArticle.publishedAt, newArticle.fetchedAt,
-      newArticle.content, newArticle.summary, newArticle.category, newArticle.subcategory,
-      newArticle.trendingScore, newArticle.duplicateGroupId, newArticle.isLead ? 1 : 0,
-      newArticle.language, newArticle.thumbnailUrl,
-      JSON.stringify(newArticle.relatedArticleIds), newArticle.isSaved ? 1 : 0,
-    );
+    await this.articlesTable().create({
+      fields: {
+        id: newArticle.id,
+        title: newArticle.title,
+        url: newArticle.url,
+        sourceName: newArticle.sourceName,
+        sourceDomain: newArticle.sourceDomain,
+        publishedAt: newArticle.publishedAt,
+        fetchedAt: newArticle.fetchedAt,
+        content: newArticle.content || undefined,
+        summary: newArticle.summary || undefined,
+        category: newArticle.category,
+        subcategory: newArticle.subcategory || undefined,
+        trendingScore: newArticle.trendingScore,
+        duplicateGroupId: newArticle.duplicateGroupId || undefined,
+        isLead: newArticle.isLead,
+        language: newArticle.language,
+        thumbnailUrl: newArticle.thumbnailUrl || undefined,
+        relatedArticleIds: JSON.stringify(newArticle.relatedArticleIds),
+        isSaved: newArticle.isSaved,
+      },
+    } as ArticleRecordData, { typecast: true });
 
     return newArticle;
   }
 
-  getArticles(params: { search?: string; category?: string; dateRange: string; from?: string; to?: string; page?: number; limit?: number }): { articles: Article[]; total: number } {
-    const { search, category, dateRange, from, to, page = 1, limit = 50 } = params;
-    const offset = (page - 1) * limit;
-    const conditions: string[] = [];
-    const values: (string | number)[] = [];
+  async getArticleByUrl(url: string): Promise<Article | null> {
+    const record = await this.findRecord(this.articlesTable(), formulaEquals('url', url));
+    return record ? this.mapArticle(record) : null;
+  }
 
-    const dateFilter = buildDateFilter(dateRange, values, from, to);
+  async getArticles(params: { search?: string; category?: string; dateRange: string; from?: string; to?: string; page?: number; limit?: number }): Promise<{ articles: Article[]; total: number }> {
+    const { search, category, dateRange, from, to, page = 1, limit = 50 } = params;
+    const conditions: string[] = [];
 
     if (search) {
-      conditions.push('(title LIKE ? OR content LIKE ? OR source_name LIKE ?)');
-      values.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      const term = formulaString(search);
+      conditions.push(`OR(IFERROR(SEARCH(${term},{title}),0)>0,IFERROR(SEARCH(${term},{content}),0)>0,IFERROR(SEARCH(${term},{sourceName}),0)>0)`);
     }
-    if (category) {
-      conditions.push('category = ?');
-      values.push(category);
-    }
+    if (category) conditions.push(formulaEquals('category', category));
+    const dateFilter = buildDateFilter(dateRange, from, to);
+    if (dateFilter) conditions.push(dateFilter);
 
-    const whereClause = 'WHERE ' + (conditions.length > 0 ? conditions.join(' AND ') + ' ' + dateFilter : '1=1 ' + dateFilter);
-    const orderClause = 'ORDER BY published_at DESC';
+    const queryParams: Airtable.SelectOptions<ArticleFields> = {
+      sort: [{ field: 'publishedAt', direction: 'desc' }],
+    };
+    if (conditions.length) queryParams.filterByFormula = `AND(${conditions.join(',')})`;
 
-    const totalRow = this.db.prepare(`SELECT COUNT(*) as count FROM articles ${whereClause}`).get(...values) as { count: number };
-    const rows = this.db.prepare(`SELECT * FROM articles ${whereClause} ${orderClause} LIMIT ? OFFSET ?`).all(...values, limit, offset) as Record<string, unknown>[];
-
+    const records = await this.listRecords(this.articlesTable(), queryParams);
+    const offset = (page - 1) * limit;
     return {
-      articles: rows.map(r => this.mapRow(r)),
-      total: totalRow.count,
+      articles: records.slice(offset, offset + limit).map(record => this.mapArticle(record)),
+      total: records.length,
     };
   }
 
-  getTrending(limit = 10): Article[] {
-    const rows = this.db.prepare('SELECT * FROM articles WHERE is_lead = 1 ORDER BY trending_score DESC, published_at DESC LIMIT ?').all(limit) as Record<string, unknown>[];
-    const results = rows.map(r => this.mapRow(r));
-    if (results.length > 0) return results;
-    const fallbackRows = this.db.prepare('SELECT * FROM articles ORDER BY trending_score DESC, published_at DESC LIMIT ?').all(limit) as Record<string, unknown>[];
-    return fallbackRows.map(r => this.mapRow(r));
+  async getTrending(limit = 10): Promise<Article[]> {
+    const records = await this.listRecords(this.articlesTable(), {
+      filterByFormula: '{isLead} = TRUE()',
+      sort: [{ field: 'trendingScore', direction: 'desc' }, { field: 'publishedAt', direction: 'desc' }],
+      maxRecords: limit,
+    });
+    if (records.length > 0) return records.map(record => this.mapArticle(record));
+
+    const fallback = await this.listRecords(this.articlesTable(), {
+      sort: [{ field: 'trendingScore', direction: 'desc' }, { field: 'publishedAt', direction: 'desc' }],
+      maxRecords: limit,
+    });
+    return fallback.map(record => this.mapArticle(record));
   }
 
-  getArticlesByGroup(groupId: string): Article[] {
-    const rows = this.db.prepare('SELECT * FROM articles WHERE duplicate_group_id = ? ORDER BY published_at ASC').all(groupId) as Record<string, unknown>[];
-    return rows.map(r => this.mapRow(r));
+  async getArticlesByGroup(groupId: string): Promise<Article[]> {
+    const records = await this.listRecords(this.articlesTable(), {
+      filterByFormula: formulaEquals('duplicateGroupId', groupId),
+      sort: [{ field: 'publishedAt', direction: 'asc' }],
+    });
+    return records.map(record => this.mapArticle(record));
   }
 
-  getTrendingTools(limit = 10): Tool[] {
-    const rows = this.db.prepare('SELECT * FROM tools ORDER BY trending_score DESC LIMIT ?').all(limit) as Record<string, unknown>[];
-    return rows.map(r => ({
-      id: r.id as string,
-      name: r.name as string,
-      description: (r.description as string) || '',
-      url: (r.url as string) || '',
-      category: (r.category as string) || 'General',
-      trendingScore: (r.trending_score as number) || 0,
-      mentions: (r.mentions as number) || 0,
-      lastMentioned: (r.last_mentioned as string) || '',
-      sourceArticles: JSON.parse((r.source_articles as string) || '[]'),
-      logoUrl: (r.logo_url as string) || null,
-    }));
+  async getTrendingTools(limit = 10): Promise<Tool[]> {
+    const records = await this.listRecords(this.toolsTable(), {
+      sort: [{ field: 'trendingScore', direction: 'desc' }],
+      maxRecords: limit,
+    });
+    return records.map(record => this.mapTool(record));
   }
 
-  getTrends(limit = 20): Trend[] {
-    const rows = this.db.prepare('SELECT * FROM trends ORDER BY mention_count DESC LIMIT ?').all(limit) as Record<string, unknown>[];
-    return rows.map(r => ({
-      id: r.id as string,
-      topic: r.topic as string,
-      category: (r.category as string) || 'General',
-      mentionCount: (r.mention_count as number) || 0,
-      sentiment: (r.sentiment as 'positive' | 'negative' | 'neutral') || 'neutral',
-      relatedArticleIds: JSON.parse((r.related_article_ids as string) || '[]'),
-      trendDirection: (r.trend_direction as 'up' | 'down' | 'stable') || 'stable',
-      period: (r.period as string) || 'daily',
-    }));
+  async getTrends(limit = 20): Promise<Trend[]> {
+    const records = await this.listRecords(this.trendsTable(), {
+      sort: [{ field: 'mentionCount', direction: 'desc' }],
+      maxRecords: limit,
+    });
+    return records.map(record => this.mapTrend(record));
   }
 
-  getStats(config?: { refreshIntervalMinutes?: number; sourceAdapter?: string }): Stats {
-    const totalRow = this.db.prepare('SELECT COUNT(*) as count FROM articles').get() as { count: number };
+  async getStats(config?: { refreshIntervalMinutes?: number; sourceAdapter?: string }): Promise<Stats> {
+    const [articleRecords, toolRecords, trendRecords, refreshRecords] = await Promise.all([
+      this.listRecords(this.articlesTable()),
+      this.listRecords(this.toolsTable()),
+      this.listRecords(this.trendsTable()),
+      this.listRecords(this.refreshLogTable(), { sort: [{ field: 'timestamp', direction: 'desc' }], maxRecords: 1 }),
+    ]);
+    const articles = articleRecords.map(record => this.mapArticle(record));
+    const tools = toolRecords.map(record => this.mapTool(record));
+    const trends = trendRecords.map(record => this.mapTrend(record));
     const todayStart = new Date().toISOString().slice(0, 10) + 'T00:00:00.000Z';
-    const todayRow = this.db.prepare('SELECT COUNT(*) as count FROM articles WHERE published_at >= ?').get(todayStart) as { count: number };
-    const toolsRow = this.db.prepare('SELECT COUNT(*) as count FROM tools').get() as { count: number };
-    const trendsRow = this.db.prepare('SELECT COUNT(*) as count FROM trends').get() as { count: number };
-
-    const newToolsTodayRow = this.db.prepare(`
-      SELECT COUNT(*) as count FROM tools WHERE date(last_mentioned) = date('now')
-    `).get() as { count: number };
-
-    const majorUpdatesTodayRow = this.db.prepare(`
-      SELECT COUNT(*) as count FROM articles WHERE published_at >= ? AND trending_score >= 60
-    `).get(todayStart) as { count: number };
-
-    const catRows = this.db.prepare('SELECT category, COUNT(*) as count FROM articles GROUP BY category').all() as { category: string; count: number }[];
     const categories: Record<string, number> = {};
-    for (const row of catRows) categories[row.category] = row.count;
 
-    const lastRefresh = this.db.prepare('SELECT * FROM refresh_log ORDER BY timestamp DESC LIMIT 1').get() as { success: number; error: string | null; timestamp: string } | undefined;
+    for (const article of articles) categories[article.category] = (categories[article.category] || 0) + 1;
+    const lastRefresh = refreshRecords[0] ? this.mapRefreshLog(refreshRecords[0]) : null;
 
     return {
-      totalArticles: totalRow.count,
-      todayArticles: todayRow.count,
-      trendingTools: toolsRow.count,
-      trendingTopics: trendsRow.count,
-      newToolsToday: newToolsTodayRow.count,
-      majorUpdatesToday: majorUpdatesTodayRow.count,
+      totalArticles: articles.length,
+      todayArticles: articles.filter(article => article.publishedAt >= todayStart).length,
+      trendingTools: tools.length,
+      trendingTopics: trends.length,
+      newToolsToday: tools.filter(tool => tool.lastMentioned >= todayStart).length,
+      majorUpdatesToday: articles.filter(article => article.publishedAt >= todayStart && article.trendingScore >= 60).length,
       categories,
       lastRefreshAt: lastRefresh?.timestamp || null,
       refreshStatus: lastRefresh ? (lastRefresh.success ? 'success' : 'error') : 'idle',
@@ -209,81 +313,172 @@ export class StorageService {
     };
   }
 
-  getSaved(): Article[] {
-    const rows = this.db.prepare('SELECT * FROM articles WHERE is_saved = 1 ORDER BY published_at DESC').all() as Record<string, unknown>[];
-    return rows.map(r => this.mapRow(r));
+  async getSaved(): Promise<Article[]> {
+    const records = await this.listRecords(this.articlesTable(), {
+      filterByFormula: '{isSaved} = TRUE()',
+      sort: [{ field: 'publishedAt', direction: 'desc' }],
+    });
+    return records.map(record => this.mapArticle(record));
   }
 
-  toggleSave(id: string): Article | null {
-    const existing = this.db.prepare('SELECT * FROM articles WHERE id = ?').get(id) as Record<string, unknown> | undefined;
-    if (!existing) return null;
-    const newSaved = existing.is_saved ? 0 : 1;
-    this.db.prepare('UPDATE articles SET is_saved = ? WHERE id = ?').run(newSaved, id);
-    return this.mapRow(this.db.prepare('SELECT * FROM articles WHERE id = ?').get(id) as Record<string, unknown>);
+  async toggleSave(id: string): Promise<Article | null> {
+    const record = await this.findRecord(this.articlesTable(), formulaEquals('id', id));
+    if (!record) return null;
+    await this.articlesTable().update(record.id, { fields: { isSaved: record.fields.isSaved !== true } } as ArticleRecordData, { typecast: true });
+    return this.mapArticle({ ...record, fields: { ...record.fields, isSaved: record.fields.isSaved !== true } } as AirtableRecord<ArticleFields>);
   }
 
-  deleteArticle(id: string): boolean {
-    const result = this.db.prepare('DELETE FROM articles WHERE id = ?').run(id);
-    return (result as { changes: number }).changes > 0;
+  async deleteArticle(id: string): Promise<boolean> {
+    const record = await this.findRecord(this.articlesTable(), formulaEquals('id', id));
+    if (!record) return false;
+    await this.articlesTable().destroy(record.id);
+    return true;
   }
 
-  logRefresh(result: RefreshResult) {
-    this.db.prepare(`
-      INSERT INTO refresh_log (id, success, articles_fetched, articles_new, articles_duplicated, error, timestamp)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(uuidv4(), result.success ? 1 : 0, result.articlesFetched, result.articlesNew, result.articlesDuplicated, result.error, result.timestamp);
+  async logRefresh(result: RefreshResult): Promise<void> {
+    await this.refreshLogTable().create({
+      fields: {
+        id: uuidv4(),
+        success: result.success,
+        articlesFetched: result.articlesFetched,
+        articlesNew: result.articlesNew,
+        articlesDuplicated: result.articlesDuplicated,
+        error: result.error || undefined,
+        timestamp: result.timestamp,
+      },
+    } as RefreshLogRecordData, { typecast: true });
   }
 
-  upsertTools(tools: Partial<Tool>[]) {
-    const stmt = this.db.prepare(`
-      INSERT OR REPLACE INTO tools (id, name, description, url, category, trending_score, mentions, last_mentioned, source_articles, logo_url)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+  async upsertTools(tools: Partial<Tool>[]): Promise<void> {
     for (const tool of tools) {
-      const existing = this.db.prepare('SELECT * FROM tools WHERE id = ?').get(tool.id) as Record<string, unknown> | undefined;
-      const mentions = ((existing?.mentions as number) || 0) + (tool.mentions ? 1 : 0);
-      stmt.run(tool.id, tool.name, tool.description || '', tool.url, tool.category || 'General',
-        tool.trendingScore || 0, mentions, tool.lastMentioned || new Date().toISOString(),
-        JSON.stringify(tool.sourceArticles || []), tool.logoUrl || null);
+      if (!tool.id) continue;
+      const existing = await this.findRecord(this.toolsTable(), formulaEquals('id', tool.id));
+      const mentions = ((existing ? this.mapTool(existing).mentions : 0) + (tool.mentions ? 1 : 0));
+      const fields: ToolFields = {
+        id: tool.id,
+        name: tool.name || '',
+        description: tool.description || '',
+        category: tool.category || 'General',
+        trendingScore: tool.trendingScore || 0,
+        mentions,
+        lastMentioned: tool.lastMentioned || new Date().toISOString(),
+        sourceArticles: JSON.stringify(tool.sourceArticles || []),
+        logoUrl: tool.logoUrl || undefined,
+      };
+      if (existing) {
+        await this.toolsTable().update(existing.id, { fields } as ToolRecordData, { typecast: true });
+      } else {
+        await this.toolsTable().create({ fields } as ToolRecordData, { typecast: true });
+      }
     }
   }
 
-  upsertTrends(trends: Partial<Trend>[]) {
-    const stmt = this.db.prepare(`
-      INSERT OR REPLACE INTO trends (id, topic, category, mention_count, sentiment, related_article_ids, trend_direction, period)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+  async upsertTrends(trends: Partial<Trend>[]): Promise<void> {
     for (const trend of trends) {
-      stmt.run(trend.id, trend.topic, trend.category || 'General', trend.mentionCount || 0,
-        trend.sentiment || 'neutral', JSON.stringify(trend.relatedArticleIds || []),
-        trend.trendDirection || 'stable', trend.period || 'daily');
+      if (!trend.id) continue;
+      const existing = await this.findRecord(this.trendsTable(), formulaEquals('id', trend.id));
+      const fields: TrendFields = {
+        id: trend.id,
+        topic: trend.topic || '',
+        category: trend.category || 'General',
+        mentionCount: trend.mentionCount || 0,
+        sentiment: trend.sentiment || 'neutral',
+        relatedArticleIds: JSON.stringify(trend.relatedArticleIds || []),
+        trendDirection: trend.trendDirection || 'stable',
+        period: trend.period || 'daily',
+      };
+      if (existing) {
+        await this.trendsTable().update(existing.id, { fields } as TrendRecordData, { typecast: true });
+      } else {
+        await this.trendsTable().create({ fields } as TrendRecordData, { typecast: true });
+      }
     }
+  }
+
+  private mapTool(record: AirtableRecord<ToolFields>): Tool {
+    const fields = record.fields;
+    return {
+      id: fields.id || record.id,
+      name: fields.name || '',
+      description: fields.description || '',
+      url: fields.url || '',
+      category: fields.category || 'General',
+      trendingScore: Number(fields.trendingScore) || 0,
+      mentions: Number(fields.mentions) || 0,
+      lastMentioned: fields.lastMentioned || '',
+      sourceArticles: parseStringArray(fields.sourceArticles),
+      logoUrl: fields.logoUrl || null,
+    };
+  }
+
+  private mapTrend(record: AirtableRecord<TrendFields>): Trend {
+    const fields = record.fields;
+    return {
+      id: fields.id || record.id,
+      topic: fields.topic || '',
+      category: fields.category || 'General',
+      mentionCount: Number(fields.mentionCount) || 0,
+      sentiment: (fields.sentiment as Trend['sentiment']) || 'neutral',
+      relatedArticleIds: parseStringArray(fields.relatedArticleIds),
+      trendDirection: (fields.trendDirection as Trend['trendDirection']) || 'stable',
+      period: fields.period || 'daily',
+    };
+  }
+
+  private mapRefreshLog(record: AirtableRecord<RefreshLogFields>): RefreshResult {
+    const fields = record.fields;
+    return {
+      success: Boolean(fields.success),
+      articlesFetched: Number(fields.articlesFetched) || 0,
+      articlesNew: Number(fields.articlesNew) || 0,
+      articlesDuplicated: Number(fields.articlesDuplicated) || 0,
+      error: fields.error || null,
+      timestamp: fields.timestamp,
+    };
   }
 }
 
-function buildDateFilter(dateRange: string, values: (string | number)[], from?: string, to?: string): string {
+function formulaString(value: string): string {
+  return `'${value.replace(/'/g, "''")}'`;
+}
+
+function formulaEquals(field: string, value: string): string {
+  return `{${field}} = ${formulaString(value)}`;
+}
+
+function compactFields<T extends Record<string, unknown>>(fields: T): Partial<T> {
+  return Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined && value !== null)) as Partial<T>;
+}
+
+function parseStringArray(value?: string): string[] {
+  if (!value) return [];
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function buildDateFilter(dateRange: string, from?: string, to?: string): string | null {
   const now = new Date();
   switch (dateRange) {
     case 'today':
-      values.push(new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString());
-      return 'AND published_at >= ?';
+      return `{publishedAt} >= DATETIME_PARSE(${formulaString(new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString())})`;
     case 'yesterday': {
       const yesterdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).toISOString();
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-      values.push(yesterdayStart, todayStart);
-      return 'AND published_at >= ? AND published_at < ?';
+      return `AND({publishedAt} >= DATETIME_PARSE(${formulaString(yesterdayStart)}),{publishedAt} < DATETIME_PARSE(${formulaString(todayStart)}))`;
     }
     case '7d':
-      values.push(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString());
-      return 'AND published_at >= ?';
+      return `{publishedAt} >= DATETIME_PARSE(${formulaString(new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString())})`;
     case '30d':
-      values.push(new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString());
-      return 'AND published_at >= ?';
+      return `{publishedAt} >= DATETIME_PARSE(${formulaString(new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString())})`;
     case 'custom':
-      if (from) { values.push(from); return 'AND published_at >= ?'; }
-      if (to) { values.push(to + 'T23:59:59'); return 'AND published_at <= ?'; }
-      return '';
+      if (from) return `{publishedAt} >= DATETIME_PARSE(${formulaString(from)})`;
+      if (to) return `{publishedAt} <= DATETIME_PARSE(${formulaString(to + 'T23:59:59')})`;
+      return null;
     default:
-      return '';
+      return null;
   }
 }
