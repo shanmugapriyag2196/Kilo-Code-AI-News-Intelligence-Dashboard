@@ -1,0 +1,179 @@
+import Airtable from "airtable";
+
+export function getAirtableBase() {
+  const { AIRTABLE_BASE_ID, AIRTABLE_API_KEY } = process.env;
+
+  if (!AIRTABLE_BASE_ID || !AIRTABLE_API_KEY) {
+    throw new Error(
+      "Airtable credentials missing. Set AIRTABLE_BASE_ID and AIRTABLE_API_KEY in environment."
+    );
+  }
+
+  return {
+    base: new Airtable({
+      apiKey: AIRTABLE_API_KEY,
+      endpointUrl: "https://api.airtable.com",
+    }).base(AIRTABLE_BASE_ID),
+    tableName: process.env.AIRTABLE_TABLE_NAME || "AI_News"
+  };
+}
+
+export function getTable() {
+  const { base, tableName } = getAirtableBase();
+  return base(tableName);
+}
+
+export async function findArticleByHash(hash: string) {
+  const table = getTable();
+  const records = await table
+    .select({
+      filterByFormula: `{hash} = '${hash}'`,
+      maxRecords: 1
+    })
+    .all();
+  return records[0] ?? null;
+}
+
+export async function findArticleByTitle(title: string) {
+  const table = getTable();
+  const records = await table
+    .select({
+      filterByFormula: `LOWER({title}) = LOWER('${title.replace(/'/g, "\\'")}')`,
+      maxRecords: 1
+    })
+    .all();
+  return records[0] ?? null;
+}
+
+export async function findArticleByURL(url: string) {
+  const table = getTable();
+  const records = await table
+    .select({
+      filterByFormula: `{url} = '${url}'`,
+      maxRecords: 1
+    })
+    .all();
+  return records[0] ?? null;
+}
+
+export async function createArticle(fields: Record<string, any>) {
+  const table = getTable();
+  const created = await table.create([{ fields }]);
+  return created[0];
+}
+
+export async function updateArticle(recordId: string, fields: Record<string, any>) {
+  const table = getTable();
+  const updated = await table.update([{ id: recordId, fields }]);
+  return updated[0];
+}
+
+export async function listArticles(options: {
+  page?: number;
+  limit?: number;
+  category?: string;
+  search?: string;
+  isFavorite?: boolean;
+  isRead?: boolean;
+  sentiment?: string;
+  sort?: "publishedAt" | "createdAt";
+  order?: "asc" | "desc";
+}) {
+  const {
+    page = 1,
+    limit = 20,
+    category,
+    search,
+    isFavorite,
+    isRead,
+    sentiment,
+    sort = "publishedAt",
+    order = "desc"
+  } = options;
+
+  const table = getTable();
+  const filters: string[] = [];
+
+  if (category) filters.push(`{category} = '${category}'`);
+  if (isFavorite !== undefined) filters.push(`{isFavorite} = ${isFavorite ? 1 : 0}`);
+  if (isRead !== undefined) filters.push(`{isRead} = ${isRead ? 1 : 0}`);
+  if (sentiment) filters.push(`{sentiment} = '${sentiment}'`);
+
+  if (search) {
+    const escaped = search.replace(/'/g, "\\'");
+    filters.push(
+      `OR(SEARCH(LOWER('${escaped}'), LOWER({title})), SEARCH(LOWER('${escaped}'), LOWER({description})), SEARCH(LOWER('${escaped}'), LOWER({summary})))`
+    );
+  }
+
+  const filterByFormula = filters.length ? filters.join(" AND ") : undefined;
+
+  const sortSpec =
+    sort === "createdAt"
+      ? [{ field: "createdAt", direction: order }]
+      : [{ field: "publishedAt", direction: order }];
+
+  const offset = (page - 1) * limit;
+
+  const allRecords = await table
+    .select({
+      filterByFormula,
+      sort: sortSpec,
+      pageSize: limit,
+      offset
+    })
+    .all();
+
+  const total = await table
+    .select({ filterByFormula, maxRecords: 1 })
+    .all()
+    .then((r) => r.length);
+
+  return {
+    records: allRecords,
+    total,
+    page,
+    limit,
+    hasMore: allRecords.length === limit
+  };
+}
+
+export async function getStats() {
+  const table = getTable();
+  const all = await table.select({ maxRecords: 1000 }).all();
+
+  const byCategory: Record<string, number> = {};
+  const bySentiment: Record<string, number> = { positive: 0, neutral: 0, negative: 0 };
+  let favorites = 0;
+  let unread = 0;
+  let lastRefreshed: string | null = null;
+
+  for (const r of all) {
+    const f = r.fields as any;
+    byCategory[f.category] = (byCategory[f.category] || 0) + 1;
+    if (f.sentiment) bySentiment[f.sentiment] = (bySentiment[f.sentiment] || 0) + 1;
+    if (f.isFavorite) favorites++;
+    if (!f.isRead) unread++;
+    if (f.createdAt && (!lastRefreshed || f.createdAt > lastRefreshed)) lastRefreshed = f.createdAt;
+  }
+
+  return {
+    total: all.length,
+    byCategory,
+    bySentiment,
+    favorites,
+    unread,
+    lastRefreshed
+  };
+}
+
+export async function getDistinctCategories() {
+  const table = getTable();
+  const all = await table.select({ maxRecords: 1000 }).all();
+  const cats = new Set<string>();
+  for (const r of all) {
+    const c = (r.fields as any).category;
+    if (c) cats.add(c);
+  }
+  return Array.from(cats).sort();
+}
