@@ -77,7 +77,9 @@ export async function createArticle(fields: Record<string, any>) {
       return (await table.create([{ fields: current }]))[0];
     } catch (e: any) {
       const msg = e.message || String(e);
-      const selectMatch = msg.match(/create new select option "([^"]+)"/);
+      // Match: create new select option "TAG" or create new select option ""TAG""
+      const selectMatch = msg.match(/create new select option "+"([^"]+)"/) ||
+        msg.match(/create new select option "([^"]+)"/);
       if (!selectMatch) {
         throw new Error(`createArticle failed (fields: ${Object.keys(clean).join(", ")}): ${msg}`);
       }
