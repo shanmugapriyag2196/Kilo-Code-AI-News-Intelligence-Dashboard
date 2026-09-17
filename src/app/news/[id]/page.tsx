@@ -3,6 +3,8 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, Calendar, Tag, Brain, Globe } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 interface Article {
   id?: string;
   title: string;
@@ -21,10 +23,10 @@ interface Article {
 
 async function getArticle(id: string): Promise<Article | null> {
   try {
-    const res = await fetch(
-      `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/news/${id}`,
-      { cache: "no-store" }
-    );
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : (process.env.NEXTAUTH_URL || "http://localhost:3000");
+    const res = await fetch(`${baseUrl}/api/news/${id}`, { cache: "no-store" });
     const data = await res.json();
     if (!res.ok || !data.success) return null;
     return data.data || null;
