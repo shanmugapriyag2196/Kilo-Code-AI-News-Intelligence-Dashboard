@@ -141,17 +141,22 @@ export async function listArticles(options: {
 
   const offset = (page - 1) * limit;
 
+  const listOptions: any = {
+    sort: sortSpec,
+    pageSize: limit,
+    offset
+  };
+  if (filterByFormula) listOptions.filterByFormula = filterByFormula;
+
   const allRecords = await table
-    .select({
-      filterByFormula,
-      sort: sortSpec,
-      pageSize: limit,
-      offset
-    })
+    .select(listOptions)
     .all();
 
+  const countOptions: any = { maxRecords: 1 };
+  if (filterByFormula) countOptions.filterByFormula = filterByFormula;
+
   const total = await table
-    .select({ filterByFormula, maxRecords: 1 })
+    .select(countOptions)
     .all()
     .then((r) => r.length);
 
