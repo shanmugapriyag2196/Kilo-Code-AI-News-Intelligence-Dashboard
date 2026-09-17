@@ -84,9 +84,9 @@ function stripEmptyFields(fields: Record<string, any>): Record<string, any> {
   for (const [k, v] of Object.entries(fields)) {
     if (v === undefined || v === null) continue;
     if (Array.isArray(v) && v.length === 0) continue;
-    // Airtable checkbox fields reject `false` — coerce to 0
-    if (typeof v === "boolean") {
-      out[k] = v ? 1 : 0;
+    // Coerce numbers to strings — Airtable single-line-text fields reject raw numbers
+    if (typeof v === "number") {
+      out[k] = String(v);
       continue;
     }
     out[k] = v;

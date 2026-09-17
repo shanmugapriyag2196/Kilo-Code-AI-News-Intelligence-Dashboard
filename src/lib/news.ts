@@ -186,7 +186,7 @@ export async function refreshNews(): Promise<RefreshResult> {
       tags,
       hash,
       language: "en",
-      trendingScore: 0,
+      trendingScore: "0",
       duplicateGroupId: null,
       relatedArticleIds: [],
       updatedAt: new Date().toISOString()
