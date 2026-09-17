@@ -35,6 +35,10 @@ export async function GET(req: NextRequest) {
       categories
     });
   } catch (e: any) {
-    return NextResponse.json({ success: false, error: e.message }, { status: 500 });
+    return NextResponse.json({
+      success: false,
+      error: e.message,
+      details: process.env.NODE_ENV === "development" ? e.stack : undefined
+    }, { status: 500 });
   }
 }

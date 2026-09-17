@@ -7,6 +7,10 @@ export async function GET(req: NextRequest) {
     const categories = await getDistinctCategories();
     return NextResponse.json({ success: true, data: { ...stats, categories } });
   } catch (e: any) {
-    return NextResponse.json({ success: false, error: e.message }, { status: 500 });
+    return NextResponse.json({
+      success: false,
+      error: e.message,
+      details: process.env.NODE_ENV === "development" ? e.stack : undefined
+    }, { status: 500 });
   }
 }
