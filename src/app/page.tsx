@@ -105,7 +105,7 @@ export default function NewsPage({ initialFilters }: { initialFilters?: Partial<
           <p className="text-slate-400 mb-6">
             No AI news matches your current filters. Try adjusting or refresh to fetch new articles.
           </p>
-          <RefreshButton />
+<RefreshButton onRefreshed={() => load(1)} />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

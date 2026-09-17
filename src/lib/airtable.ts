@@ -107,10 +107,10 @@ export async function listArticles(options: {
   if (isSaved !== undefined) filters.push(`{isSaved} = ${isSaved ? 1 : 0}`);
   if (sentiment) filters.push(`{sentiment} = '${sentiment}'`);
 
-  if (search) {
+if (search) {
     const escaped = search.replace(/'/g, "\\'");
     filters.push(
-      `OR(SEARCH(LOWER('${escaped}'), LOWER({title})), SEARCH(LOWER('${escaped}'), LOWER({description})), SEARCH(LOWER('${escaped}'), LOWER({summary})))`
+      `OR(SEARCH(LOWER('${escaped}'), LOWER({title})), SEARCH(LOWER('${escaped}'), LOWER({summary})), SEARCH(LOWER('${escaped}'), LOWER({content})))`
     );
   }
 

@@ -171,7 +171,6 @@ export async function refreshNews(): Promise<RefreshResult> {
 
     await createArticle({
       title,
-      description,
       content,
       url,
       thumbnailUrl: raw.urlToImage,
