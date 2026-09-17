@@ -21,10 +21,13 @@ interface Article {
 
 async function getArticle(id: string): Promise<Article | null> {
   try {
-    const res = await fetch(`${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/news?search=&limit=1`, { cache: "no-store" });
+    const res = await fetch(
+      `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/news/${id}`,
+      { cache: "no-store" }
+    );
     const data = await res.json();
-    const found = (data.data || []).find((a: Article) => a.id === id);
-    return found || null;
+    if (!res.ok || !data.success) return null;
+    return data.data || null;
   } catch {
     return null;
   }

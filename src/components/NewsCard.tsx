@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 interface NewsArticle {
   id?: string;
   title: string;
@@ -25,7 +27,9 @@ const sentimentColors: Record<string, string> = {
 };
 
 export default function NewsCard({ article }: { article: NewsArticle }) {
-  return (
+  const detailHref = article.id ? `/news/${article.id}` : null;
+
+  const content = (
     <article className="group bg-slate-800/40 hover:bg-slate-800/70 border border-slate-700/50 rounded-xl overflow-hidden transition-all hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
       {article.thumbnailUrl && (
         <div className="relative h-40 overflow-hidden">
@@ -67,16 +71,21 @@ export default function NewsCard({ article }: { article: NewsArticle }) {
         )}
         <div className="flex items-center justify-between pt-3 border-t border-slate-700/50">
           <span className="text-xs text-slate-500">{article.author || "Unknown author"}</span>
-          <a
-            href={article.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-brand-400 hover:text-brand-300 transition-colors"
-          >
+          <span className="text-xs text-brand-400 group-hover:text-brand-300 transition-colors">
             Read article →
-          </a>
+          </span>
         </div>
       </div>
     </article>
   );
+
+  if (detailHref) {
+    return (
+      <Link href={detailHref} className="block h-full">
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
 }
