@@ -70,13 +70,33 @@ export async function findArticleByDuplicateGroupId(duplicateGroupId: string) {
 export async function createArticle(fields: Record<string, any>) {
   const table = getTable();
   const clean = stripEmptyFields(fields);
-  try {
-    const created = await table.create([{ fields: clean }]);
-    return created[0];
-  } catch (e: any) {
-    const msg = e.message || String(e);
-    throw new Error(`createArticle failed (fields: ${Object.keys(clean).join(", ")}): ${msg}`);
+  let attempt = 0;
+  let current = { ...clean };
+  while (attempt < 10) {
+    try {
+      return (await table.create([{ fields: current }]))[0];
+    } catch (e: any) {
+      const msg = e.message || String(e);
+      const selectMatch = msg.match(/create new select option "([^"]+)"/);
+      if (!selectMatch) {
+        throw new Error(`createArticle failed (fields: ${Object.keys(clean).join(", ")}): ${msg}`);
+      }
+      const badField = findFieldForTag(current, selectMatch[1]);
+      if (!badField) {
+        throw new Error(`createArticle failed (fields: ${Object.keys(clean).join(", ")}): ${msg}`);
+      }
+      current[badField] = (current[badField] as string[]).filter((t) => t !== selectMatch[1]);
+      attempt++;
+    }
   }
+  throw new Error(`createArticle failed: too many unknown select options`);
+}
+
+function findFieldForTag(fields: Record<string, any>, tag: string): string | null {
+  for (const [k, v] of Object.entries(fields)) {
+    if (Array.isArray(v) && v.includes(tag)) return k;
+  }
+  return null;
 }
 
 function stripEmptyFields(fields: Record<string, any>): Record<string, any> {
