@@ -11,7 +11,6 @@ interface NewsArticle {
   sentiment: "positive" | "neutral" | "negative";
   summary: string | null;
   tags: string[];
-  isSaved: boolean;
 }
 
 function formatDate(dateStr: string) {

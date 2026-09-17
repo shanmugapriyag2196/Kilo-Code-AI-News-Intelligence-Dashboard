@@ -19,7 +19,6 @@ interface Article {
   sentiment: "positive" | "neutral" | "negative";
   summary: string | null;
   tags: string[];
-  isSaved: boolean;
 }
 
 interface Meta {
@@ -33,40 +32,47 @@ type Filters = {
   category: string;
   search: string;
   sentiment: string;
-  isSaved: boolean | null;
 };
 
 export default function NewsPage({ initialFilters }: { initialFilters?: Partial<Filters> } = {}) {
   const [articles, setArticles] = useState<Article[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [meta, setMeta] = useState<Meta | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [rawResponse, setRawResponse] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>({
     category: "",
     search: "",
     sentiment: "",
-    isSaved: null,
     ...initialFilters
   });
   const [loading, setLoading] = useState(true);
 
   async function load(page = 1) {
     setLoading(true);
+    setError(null);
+    setRawResponse(null);
     try {
       const params = new URLSearchParams({
         page: String(page),
         limit: "20",
         ...(filters.category && { category: filters.category }),
         ...(filters.search && { search: filters.search }),
-        ...(filters.sentiment && { sentiment: filters.sentiment }),
-        ...(filters.isSaved !== null && { isSaved: String(filters.isSaved) })
+        ...(filters.sentiment && { sentiment: filters.sentiment })
       });
       const res = await fetch(`/api/news?${params}`);
       const data = await res.json();
+      setRawResponse(JSON.stringify(data, null, 2));
+      if (!res.ok || !data.success) {
+        setError(data.error || "Failed to load articles");
+        setArticles([]);
+        return;
+      }
       setArticles(data.data || []);
       setCategories(data.categories || []);
       setMeta(data.meta || null);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      setError(e.message || "Network error");
     } finally {
       setLoading(false);
     }
@@ -91,6 +97,18 @@ export default function NewsPage({ initialFilters }: { initialFilters?: Partial<
         value={filters}
         onChange={setFilters}
       />
+
+      {error && (
+        <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 text-rose-300 text-sm">
+          <strong>Error:</strong> {error}
+          {rawResponse && (
+            <details className="mt-2">
+              <summary className="cursor-pointer text-xs">Show raw API response</summary>
+              <pre className="mt-2 text-xs bg-slate-900 p-2 rounded overflow-auto">{rawResponse}</pre>
+            </details>
+          )}
+        </div>
+      )}
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

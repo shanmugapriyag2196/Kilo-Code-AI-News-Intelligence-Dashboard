@@ -185,8 +185,6 @@ export async function refreshNews(): Promise<RefreshResult> {
       sentiment,
       tags,
       hash,
-      isSaved: false,
-      isLead: false,
       language: "en",
       trendingScore: 0,
       duplicateGroupId: null,

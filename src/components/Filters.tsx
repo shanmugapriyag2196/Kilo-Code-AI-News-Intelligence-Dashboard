@@ -9,7 +9,6 @@ interface FiltersProps {
     category: string;
     search: string;
     sentiment: string;
-    isSaved: boolean | null;
   };
   onChange: (filters: FiltersProps["value"]) => void;
 }
@@ -24,11 +23,6 @@ export default function Filters({ categories, value, onChange }: FiltersProps) {
     { label: "Negative", value: "negative" }
   ];
 
-  const savedOptions = [
-    { label: "All", value: null },
-    { label: "Saved", value: true }
-  ];
-
   return (
     <div className="space-y-3">
       <div className="flex gap-2">
@@ -36,7 +30,7 @@ export default function Filters({ categories, value, onChange }: FiltersProps) {
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Search AI news by title, description, or summary..."
+            placeholder="Search AI news by title, summary, or content..."
             value={value.search}
             onChange={(e) => onChange({ ...value, search: e.target.value })}
             className="w-full pl-9 pr-9 py-2.5 text-sm bg-slate-800/50 border border-slate-700/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-transparent"
@@ -100,23 +94,6 @@ export default function Filters({ categories, value, onChange }: FiltersProps) {
                   }`}
                 >
                   {s.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs font-medium text-slate-400 mb-2 block">Saved</label>
-            <div className="flex flex-wrap gap-2">
-              {savedOptions.map((f) => (
-                <button
-                  key={String(f.value)}
-                  onClick={() => onChange({ ...value, isSaved: f.value })}
-                  className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-                    value.isSaved === f.value ? "bg-brand-600 border-brand-500 text-white" : "bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700"
-                  }`}
-                >
-                  {f.label}
                 </button>
               ))}
             </div>

@@ -69,8 +69,29 @@ export async function findArticleByDuplicateGroupId(duplicateGroupId: string) {
 
 export async function createArticle(fields: Record<string, any>) {
   const table = getTable();
-  const created = await table.create([{ fields }]);
-  return created[0];
+  const clean = stripEmptyFields(fields);
+  try {
+    const created = await table.create([{ fields: clean }]);
+    return created[0];
+  } catch (e: any) {
+    const msg = e.message || String(e);
+    throw new Error(`createArticle failed (fields: ${Object.keys(clean).join(", ")}): ${msg}`);
+  }
+}
+
+function stripEmptyFields(fields: Record<string, any>): Record<string, any> {
+  const out: Record<string, any> = {};
+  for (const [k, v] of Object.entries(fields)) {
+    if (v === undefined || v === null) continue;
+    if (Array.isArray(v) && v.length === 0) continue;
+    // Airtable checkbox fields reject `false` — coerce to 0
+    if (typeof v === "boolean") {
+      out[k] = v ? 1 : 0;
+      continue;
+    }
+    out[k] = v;
+  }
+  return out;
 }
 
 export async function updateArticle(recordId: string, fields: Record<string, any>) {
@@ -84,7 +105,6 @@ export async function listArticles(options: {
   limit?: number;
   category?: string;
   search?: string;
-  isSaved?: boolean;
   sentiment?: string;
   sort?: "publishedAt" | "fetchedAt";
   order?: "asc" | "desc";
@@ -94,7 +114,6 @@ export async function listArticles(options: {
     limit = 20,
     category,
     search,
-    isSaved,
     sentiment,
     sort = "publishedAt",
     order = "desc"
@@ -104,10 +123,9 @@ export async function listArticles(options: {
   const filters: string[] = [];
 
   if (category) filters.push(`{category} = '${category}'`);
-  if (isSaved !== undefined) filters.push(`{isSaved} = ${isSaved ? 1 : 0}`);
   if (sentiment) filters.push(`{sentiment} = '${sentiment}'`);
 
-if (search) {
+  if (search) {
     const escaped = search.replace(/'/g, "\\'");
     filters.push(
       `OR(SEARCH(LOWER('${escaped}'), LOWER({title})), SEARCH(LOWER('${escaped}'), LOWER({summary})), SEARCH(LOWER('${escaped}'), LOWER({content})))`
