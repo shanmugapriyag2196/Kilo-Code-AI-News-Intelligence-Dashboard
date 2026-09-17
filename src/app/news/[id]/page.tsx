@@ -1,5 +1,3 @@
-import { notFound } from "next/navigation";
-import { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, Calendar, Tag, Brain, Globe } from "lucide-react";
 
@@ -21,23 +19,45 @@ interface Article {
   tags: string[];
 }
 
-async function getArticle(id: string): Promise<Article | null> {
+async function getArticle(id: string): Promise<{ article: Article | null; error: string | null }> {
   try {
     const baseUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
       : (process.env.NEXTAUTH_URL || "http://localhost:3000");
     const res = await fetch(`${baseUrl}/api/news/${id}`, { cache: "no-store" });
     const data = await res.json();
-    if (!res.ok || !data.success) return null;
-    return data.data || null;
-  } catch {
-    return null;
+    if (!res.ok || !data.success) {
+      return { article: null, error: data.error || `HTTP ${res.status}` };
+    }
+    return { article: data.data || null, error: null };
+  } catch (e: any) {
+    return { article: null, error: e.message || "Network error" };
   }
 }
 
 export default async function ArticlePage({ params }: { params: { id: string } }) {
-  const article = await getArticle(params.id);
-  if (!article) notFound();
+  const { article, error } = await getArticle(params.id);
+
+  if (!article) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-6">
+        <Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors">
+          <ArrowLeft className="w-4 h-4" /> Back to news
+        </Link>
+        <div className="text-center py-16">
+          <div className="text-6xl mb-4">🔍</div>
+          <h3 className="text-xl font-semibold text-white mb-2">Article not found</h3>
+          <p className="text-slate-400 mb-2">
+            Could not find article with ID: <code className="text-brand-300">{params.id}</code>
+          </p>
+          {error && <p className="text-rose-400 text-sm mb-6">Error: {error}</p>}
+          <p className="text-slate-500 text-sm">
+            Try clicking <strong>Refresh News</strong> on the main page first.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const sentimentColors: Record<string, string> = {
     positive: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
