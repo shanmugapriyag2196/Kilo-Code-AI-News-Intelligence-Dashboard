@@ -56,7 +56,7 @@ export default function NewsCard({ article }: { article: NewsArticle }) {
         {article.summary && (
           <p className="text-sm text-slate-400 line-clamp-2 mb-3">{article.summary}</p>
         )}
-        {article.tags.length > 0 && (
+        {Array.isArray(article.tags) && article.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
             {article.tags.slice(0, 4).map((tag) => (
               <span key={tag} className="text-xs px-2 py-0.5 rounded bg-slate-700/50 text-slate-300">

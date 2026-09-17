@@ -91,7 +91,7 @@ export default async function ArticlePage({ params }: { params: { id: string } }
             </div>
           )}
 
-          {article.tags.length > 0 && (
+          {Array.isArray(article.tags) && article.tags.length > 0 && (
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-2">
                 <Tag className="w-4 h-4 text-slate-400" />

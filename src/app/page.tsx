@@ -110,20 +110,20 @@ export default function NewsPage({ initialFilters }: { initialFilters?: Partial<
         </div>
       )}
 
-      {loading ? (
+{loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="h-64 bg-slate-800/30 rounded-xl animate-pulse" />
           ))}
         </div>
-      ) : articles.length === 0 ? (
+      ) : !Array.isArray(articles) || articles.length === 0 ? (
         <div className="text-center py-16">
           <div className="text-6xl mb-4">🤖</div>
           <h3 className="text-xl font-semibold text-white mb-2">No articles found</h3>
           <p className="text-slate-400 mb-6">
             No AI news matches your current filters. Try adjusting or refresh to fetch new articles.
           </p>
-<RefreshButton onRefreshed={() => load(1)} />
+          <RefreshButton onRefreshed={() => load(1)} />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
