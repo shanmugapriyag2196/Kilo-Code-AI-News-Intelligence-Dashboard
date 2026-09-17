@@ -1,0 +1,16 @@
+name: Refresh AI News
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # 6am UTC daily
+    - cron: "0 12 * * *"  # 12pm UTC daily
+    - cron: "0 18 * * *"  # 6pm UTC daily
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger news refresh
+        run: |
+          curl -X POST "${{ secrets.VERCEL_PRODUCTION_URL }}/api/news/refresh?secret=${{ secrets.CRON_SECRET }}"

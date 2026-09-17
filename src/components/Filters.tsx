@@ -9,8 +9,7 @@ interface FiltersProps {
     category: string;
     search: string;
     sentiment: string;
-    isFavorite: boolean | null;
-    isRead: boolean | null;
+    isSaved: boolean | null;
   };
   onChange: (filters: FiltersProps["value"]) => void;
 }
@@ -25,15 +24,9 @@ export default function Filters({ categories, value, onChange }: FiltersProps) {
     { label: "Negative", value: "negative" }
   ];
 
-  const readOptions = [
+  const savedOptions = [
     { label: "All", value: null },
-    { label: "Unread", value: false },
-    { label: "Read", value: true }
-  ];
-
-  const favOptions = [
-    { label: "All", value: null },
-    { label: "Favorites", value: true }
+    { label: "Saved", value: true }
   ];
 
   return (
@@ -112,38 +105,20 @@ export default function Filters({ categories, value, onChange }: FiltersProps) {
             </div>
           </div>
 
-          <div className="flex gap-4">
-            <div>
-              <label className="text-xs font-medium text-slate-400 mb-2 block">Read Status</label>
-              <div className="flex flex-wrap gap-2">
-                {readOptions.map((r) => (
-                  <button
-                    key={String(r.value)}
-                    onClick={() => onChange({ ...value, isRead: r.value })}
-                    className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-                      value.isRead === r.value ? "bg-brand-600 border-brand-500 text-white" : "bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700"
-                    }`}
-                  >
-                    {r.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-slate-400 mb-2 block">Favorites</label>
-              <div className="flex flex-wrap gap-2">
-                {favOptions.map((f) => (
-                  <button
-                    key={String(f.value)}
-                    onClick={() => onChange({ ...value, isFavorite: f.value })}
-                    className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-                      value.isFavorite === f.value ? "bg-brand-600 border-brand-500 text-white" : "bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700"
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
+          <div>
+            <label className="text-xs font-medium text-slate-400 mb-2 block">Saved</label>
+            <div className="flex flex-wrap gap-2">
+              {savedOptions.map((f) => (
+                <button
+                  key={String(f.value)}
+                  onClick={() => onChange({ ...value, isSaved: f.value })}
+                  className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
+                    value.isSaved === f.value ? "bg-brand-600 border-brand-500 text-white" : "bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>

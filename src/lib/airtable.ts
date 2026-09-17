@@ -56,6 +56,17 @@ export async function findArticleByURL(url: string) {
   return records[0] ?? null;
 }
 
+export async function findArticleByDuplicateGroupId(duplicateGroupId: string) {
+  const table = getTable();
+  const records = await table
+    .select({
+      filterByFormula: `{duplicateGroupId} = '${duplicateGroupId}'`,
+      maxRecords: 1
+    })
+    .all();
+  return records[0] ?? null;
+}
+
 export async function createArticle(fields: Record<string, any>) {
   const table = getTable();
   const created = await table.create([{ fields }]);
@@ -73,10 +84,9 @@ export async function listArticles(options: {
   limit?: number;
   category?: string;
   search?: string;
-  isFavorite?: boolean;
-  isRead?: boolean;
+  isSaved?: boolean;
   sentiment?: string;
-  sort?: "publishedAt" | "createdAt";
+  sort?: "publishedAt" | "fetchedAt";
   order?: "asc" | "desc";
 }) {
   const {
@@ -84,8 +94,7 @@ export async function listArticles(options: {
     limit = 20,
     category,
     search,
-    isFavorite,
-    isRead,
+    isSaved,
     sentiment,
     sort = "publishedAt",
     order = "desc"
@@ -95,8 +104,7 @@ export async function listArticles(options: {
   const filters: string[] = [];
 
   if (category) filters.push(`{category} = '${category}'`);
-  if (isFavorite !== undefined) filters.push(`{isFavorite} = ${isFavorite ? 1 : 0}`);
-  if (isRead !== undefined) filters.push(`{isRead} = ${isRead ? 1 : 0}`);
+  if (isSaved !== undefined) filters.push(`{isSaved} = ${isSaved ? 1 : 0}`);
   if (sentiment) filters.push(`{sentiment} = '${sentiment}'`);
 
   if (search) {
@@ -109,8 +117,8 @@ export async function listArticles(options: {
   const filterByFormula = filters.length ? filters.join(" AND ") : undefined;
 
   const sortSpec =
-    sort === "createdAt"
-      ? [{ field: "createdAt", direction: order }]
+    sort === "fetchedAt"
+      ? [{ field: "fetchedAt", direction: order }]
       : [{ field: "publishedAt", direction: order }];
 
   const offset = (page - 1) * limit;
@@ -144,25 +152,22 @@ export async function getStats() {
 
   const byCategory: Record<string, number> = {};
   const bySentiment: Record<string, number> = { positive: 0, neutral: 0, negative: 0 };
-  let favorites = 0;
-  let unread = 0;
+  let saved = 0;
   let lastRefreshed: string | null = null;
 
   for (const r of all) {
     const f = r.fields as any;
     byCategory[f.category] = (byCategory[f.category] || 0) + 1;
     if (f.sentiment) bySentiment[f.sentiment] = (bySentiment[f.sentiment] || 0) + 1;
-    if (f.isFavorite) favorites++;
-    if (!f.isRead) unread++;
-    if (f.createdAt && (!lastRefreshed || f.createdAt > lastRefreshed)) lastRefreshed = f.createdAt;
+    if (f.isSaved) saved++;
+    if (f.fetchedAt && (!lastRefreshed || f.fetchedAt > lastRefreshed)) lastRefreshed = f.fetchedAt;
   }
 
   return {
     total: all.length,
     byCategory,
     bySentiment,
-    favorites,
-    unread,
+    saved,
     lastRefreshed
   };
 }

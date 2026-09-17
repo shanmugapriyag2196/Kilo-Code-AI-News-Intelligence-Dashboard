@@ -9,8 +9,8 @@ interface Article {
   description: string | null;
   content: string | null;
   url: string;
-  imageUrl: string | null;
-  source: string;
+  thumbnailUrl: string | null;
+  sourceName: string;
   author: string | null;
   publishedAt: string;
   category: string;
@@ -47,10 +47,10 @@ export default async function ArticlePage({ params }: { params: { id: string } }
       </Link>
 
       <article className="bg-slate-800/40 border border-slate-700/50 rounded-xl overflow-hidden">
-        {article.imageUrl && (
+        {article.thumbnailUrl && (
           <div className="relative h-72 overflow-hidden">
             <img
-              src={article.imageUrl}
+              src={article.thumbnailUrl}
               alt={article.title}
               className="w-full h-full object-cover"
               onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
@@ -69,7 +69,7 @@ export default async function ArticlePage({ params }: { params: { id: string } }
             <Calendar className="w-3.5 h-3.5" />
             <span>{new Date(article.publishedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</span>
             <Globe className="w-3.5 h-3.5 ml-auto" />
-            <span>{article.source}</span>
+            <span>{article.sourceName}</span>
           </div>
 
           <h1 className="text-3xl font-bold text-white leading-tight mb-4">{article.title}</h1>

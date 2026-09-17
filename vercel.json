@@ -3,18 +3,7 @@
   "installCommand": "npm install",
   "framework": "nextjs",
   "regions": ["sfo1"],
-  "cron": [
-    {
-      "path": "/api/news/refresh",
-      "schedule": "0 6 * * *"
-    },
-    {
-      "path": "/api/news/refresh",
-      "schedule": "0 12 * * *"
-    },
-    {
-      "path": "/api/news/refresh",
-      "schedule": "0 18 * * *"
-    }
+  "rewrites": [
+    { "source": "/api/news/refresh", "destination": "/api/news/refresh" }
   ]
 }

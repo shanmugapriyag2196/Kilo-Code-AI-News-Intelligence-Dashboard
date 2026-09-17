@@ -7,8 +7,7 @@ interface StatsData {
   total: number;
   byCategory: Record<string, number>;
   bySentiment: { positive: number; neutral: number; negative: number };
-  favorites: number;
-  unread: number;
+  saved: number;
   lastRefreshed: string | null;
 }
 

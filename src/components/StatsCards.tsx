@@ -5,17 +5,16 @@ interface StatsData {
   total: number;
   byCategory: Record<string, number>;
   bySentiment: { positive: number; neutral: number; negative: number };
-  favorites: number;
-  unread: number;
+  saved: number;
   lastRefreshed: string | null;
 }
 
 export default function StatsCards({ stats }: { stats: StatsData }) {
-  const cards = [
+  const cards: { label: string; value: string | number; icon: any; color: string }[] = [
     { label: "Total Articles", value: stats.total, icon: Newspaper, color: "text-blue-400" },
-    { label: "Unread", value: stats.unread, icon: BookOpen, color: "text-amber-400" },
-    { label: "Favorites", value: stats.favorites, icon: Star, color: "text-pink-400" },
-    { label: "Positive Sentiment", value: stats.bySentiment.positive, icon: TrendingUp, color: "text-emerald-400" }
+    { label: "Saved", value: stats.saved, icon: Star, color: "text-pink-400" },
+    { label: "Positive Sentiment", value: stats.bySentiment.positive, icon: TrendingUp, color: "text-emerald-400" },
+    { label: "Last Refreshed", value: stats.lastRefreshed ? new Date(stats.lastRefreshed).toLocaleDateString() : "Never", icon: Activity, color: "text-brand-400" }
   ];
 
   return (

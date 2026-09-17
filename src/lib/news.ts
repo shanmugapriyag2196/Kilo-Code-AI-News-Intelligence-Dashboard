@@ -78,6 +78,37 @@ function guessTags(article: RawNewsAPIArticle): string[] {
   return tags.slice(0, 6);
 }
 
+function extractDomain(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+}
+
+function guessSubcategory(article: RawNewsAPIArticle, category: string): string {
+  const hay = `${article.title || ""} ${article.description || ""}`.toLowerCase();
+  if (category === "Artificial Intelligence") {
+    if (/robot|autonomous/i.test(hay)) return "Robotics";
+    if (/vision|image|video/i.test(hay)) return "Computer Vision";
+    if (/nlp|language|translation/i.test(hay)) return "NLP";
+    if (/chip|semiconductor|gpu|hardware/i.test(hay)) return "Hardware";
+    return "Machine Learning";
+  }
+  if (category === "Science") {
+    if (/space|planet|nasa/i.test(hay)) return "Space";
+    if (/climate|weather|environment/i.test(hay)) return "Climate";
+    if (/medical|drug|health|patient/i.test(hay)) return "Medical";
+    return "Research";
+  }
+  if (category === "Business") {
+    if (/startup|funding|venture/i.test(hay)) return "Startups";
+    if (/market|stock|trading/i.test(hay)) return "Markets";
+    return "Finance";
+  }
+  return "General";
+}
+
 async function fetchFromNewsAPI(category?: string): Promise<RawNewsAPIArticle[]> {
   if (!NEWSAPI_KEY) throw new Error("NEWSAPI_KEY not configured");
 
@@ -143,19 +174,25 @@ export async function refreshNews(): Promise<RefreshResult> {
       description,
       content,
       url,
-      imageUrl: raw.urlToImage,
-      source: raw.source?.name || "Unknown",
+      thumbnailUrl: raw.urlToImage,
+      sourceName: raw.source?.name || "Unknown",
+      sourceDomain: extractDomain(url),
       author: raw.author,
       publishedAt: raw.publishedAt || new Date().toISOString(),
+      fetchedAt: new Date().toISOString(),
       category,
-      sentiment,
+      subcategory: guessSubcategory(raw, category),
       summary,
+      sentiment,
       tags,
-      isRead: false,
-      isFavorite: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      hash
+      hash,
+      isSaved: false,
+      isLead: false,
+      language: "en",
+      trendingScore: 0,
+      duplicateGroupId: null,
+      relatedArticleIds: [],
+      updatedAt: new Date().toISOString()
     });
     newCount++;
   }

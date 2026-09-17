@@ -7,8 +7,7 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10), 50);
   const category = searchParams.get("category") || undefined;
   const search = searchParams.get("search") || undefined;
-  const isFavorite = searchParams.get("isFavorite");
-  const isRead = searchParams.get("isRead");
+  const isSaved = searchParams.get("isSaved");
   const sentiment = searchParams.get("sentiment") || undefined;
   const sort = (searchParams.get("sort") as any) || "publishedAt";
   const order = (searchParams.get("order") as any) || "desc";
@@ -19,8 +18,7 @@ export async function GET(req: NextRequest) {
       limit,
       category,
       search,
-      isFavorite: isFavorite === "true" ? true : isFavorite === "false" ? false : undefined,
-      isRead: isRead === "true" ? true : isRead === "false" ? false : undefined,
+      isSaved: isSaved === "true" ? true : isSaved === "false" ? false : undefined,
       sentiment,
       sort,
       order

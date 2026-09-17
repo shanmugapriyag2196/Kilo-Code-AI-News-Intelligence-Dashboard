@@ -22,5 +22,12 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  return GET(req);
+  // Manual refresh from UI — no secret required
+  try {
+    const result = await refreshNews();
+    const stats = await getStats();
+    return NextResponse.json({ success: true, data: result, stats });
+  } catch (e: any) {
+    return NextResponse.json({ success: false, error: e.message }, { status: 500 });
+  }
 }

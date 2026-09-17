@@ -11,16 +11,15 @@ interface Article {
   title: string;
   description: string | null;
   url: string;
-  imageUrl: string | null;
-  source: string;
+  thumbnailUrl: string | null;
+  sourceName: string;
   author: string | null;
   publishedAt: string;
   category: string;
   sentiment: "positive" | "neutral" | "negative";
   summary: string | null;
   tags: string[];
-  isRead: boolean;
-  isFavorite: boolean;
+  isSaved: boolean;
 }
 
 interface Meta {
@@ -30,16 +29,23 @@ interface Meta {
   lastRefreshed: string | null;
 }
 
-export default function NewsPage() {
+type Filters = {
+  category: string;
+  search: string;
+  sentiment: string;
+  isSaved: boolean | null;
+};
+
+export default function NewsPage({ initialFilters }: { initialFilters?: Partial<Filters> } = {}) {
   const [articles, setArticles] = useState<Article[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [meta, setMeta] = useState<Meta | null>(null);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<Filters>({
     category: "",
     search: "",
     sentiment: "",
-    isFavorite: null as boolean | null,
-    isRead: null as boolean | null
+    isSaved: null,
+    ...initialFilters
   });
   const [loading, setLoading] = useState(true);
 
@@ -52,8 +58,7 @@ export default function NewsPage() {
         ...(filters.category && { category: filters.category }),
         ...(filters.search && { search: filters.search }),
         ...(filters.sentiment && { sentiment: filters.sentiment }),
-        ...(filters.isFavorite !== null && { isFavorite: String(filters.isFavorite) }),
-        ...(filters.isRead !== null && { isRead: String(filters.isRead) })
+        ...(filters.isSaved !== null && { isSaved: String(filters.isSaved) })
       });
       const res = await fetch(`/api/news?${params}`);
       const data = await res.json();

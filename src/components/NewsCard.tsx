@@ -3,16 +3,15 @@ interface NewsArticle {
   title: string;
   description: string | null;
   url: string;
-  imageUrl: string | null;
-  source: string;
+  thumbnailUrl: string | null;
+  sourceName: string;
   author: string | null;
   publishedAt: string;
   category: string;
   sentiment: "positive" | "neutral" | "negative";
   summary: string | null;
   tags: string[];
-  isRead: boolean;
-  isFavorite: boolean;
+  isSaved: boolean;
 }
 
 function formatDate(dateStr: string) {
@@ -29,10 +28,10 @@ const sentimentColors: Record<string, string> = {
 export default function NewsCard({ article }: { article: NewsArticle }) {
   return (
     <article className="group bg-slate-800/40 hover:bg-slate-800/70 border border-slate-700/50 rounded-xl overflow-hidden transition-all hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
-      {article.imageUrl && (
+      {article.thumbnailUrl && (
         <div className="relative h-40 overflow-hidden">
           <img
-            src={article.imageUrl}
+            src={article.thumbnailUrl}
             alt={article.title}
             loading="lazy"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -50,7 +49,7 @@ export default function NewsCard({ article }: { article: NewsArticle }) {
             {article.category}
           </span>
           <span>{formatDate(article.publishedAt)}</span>
-          <span className="ml-auto">{article.source}</span>
+          <span className="ml-auto">{article.sourceName}</span>
         </div>
         <h3 className="text-base font-semibold text-white leading-snug mb-2 line-clamp-2 group-hover:text-brand-300 transition-colors">
           {article.title}
