@@ -4,6 +4,7 @@ import {
   findArticleByTitle,
   findArticleByURL,
   createArticle,
+  getExistingTags,
   listArticles
 } from "./airtable";
 import { NewsAPIResponse, RawNewsAPIArticle, NewsArticle, RefreshResult } from "../types";
@@ -141,6 +142,7 @@ async function fetchFromNewsAPI(category?: string): Promise<RawNewsAPIArticle[]>
 
 export async function refreshNews(): Promise<RefreshResult> {
   const articles = await fetchFromNewsAPI();
+  const existingTags = await getExistingTags();
   let newCount = 0;
   let updatedCount = 0;
   let duplicatesSkipped = 0;
@@ -190,7 +192,7 @@ export async function refreshNews(): Promise<RefreshResult> {
       duplicateGroupId: null,
       relatedArticleIds: [],
       updatedAt: new Date().toISOString()
-    });
+    }, existingTags);
     newCount++;
   }
 

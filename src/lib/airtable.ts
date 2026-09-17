@@ -67,8 +67,35 @@ export async function findArticleByDuplicateGroupId(duplicateGroupId: string) {
   return records[0] ?? null;
 }
 
-export async function createArticle(fields: Record<string, any>) {
+export async function getExistingTags(): Promise<string[]> {
+  try {
+    const { AIRTABLE_BASE_ID, AIRTABLE_API_KEY } = process.env;
+    if (!AIRTABLE_BASE_ID || !AIRTABLE_API_KEY) return [];
+    const tableName = process.env.AIRTABLE_TABLE_NAME || "Articles";
+    const res = await fetch(
+      `https://api.airtable.com/v0/meta/bases/${AIRTABLE_BASE_ID}/tables`,
+      {
+        headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` },
+        cache: "no-store"
+      }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    const table = (data.tables || []).find((t: any) => t.name === tableName);
+    if (!table) return [];
+    const tagsField = table.fields.find((f: any) => f.name === "tags");
+    if (!tagsField || !tagsField.options) return [];
+    return (tagsField.options.choices || []).map((c: any) => c.name).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+export async function createArticle(fields: Record<string, any>, existingTags?: string[]) {
   const table = getTable();
+  if (existingTags && Array.isArray(fields.tags)) {
+    fields.tags = fields.tags.filter((t: string) => existingTags.includes(t));
+  }
   const clean = stripEmptyFields(fields);
   let attempt = 0;
   let current = { ...clean };
@@ -77,7 +104,6 @@ export async function createArticle(fields: Record<string, any>) {
       return (await table.create([{ fields: current }]))[0];
     } catch (e: any) {
       const msg = e.message || String(e);
-      // Match: create new select option "TAG" or create new select option ""TAG""
       const selectMatch = msg.match(/create new select option "+"([^"]+)"/) ||
         msg.match(/create new select option "([^"]+)"/);
       if (!selectMatch) {
