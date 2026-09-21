@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Globe, RefreshCw, Newspaper, Filter } from "lucide-react";
+import { ArrowLeft, Globe, RefreshCw, Newspaper, Filter, Calendar } from "lucide-react";
 import NewsCard from "@/components/NewsCard";
 
 interface Article {
@@ -29,9 +29,17 @@ const COUNTRIES = [
   { label: "Australia", value: "Australia" }
 ];
 
+const DATE_FILTERS = [
+  { label: "Today", value: "today" },
+  { label: "Yesterday", value: "yesterday" },
+  { label: "Last 7 Days", value: "week" },
+  { label: "All Time", value: "all" }
+];
+
 export default function NewsPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [country, setCountry] = useState("");
+  const [dateFilter, setDateFilter] = useState("today");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,7 +49,7 @@ export default function NewsPage() {
     try {
       const params = new URLSearchParams({
         limit: "10",
-        dateFilter: "today"
+        dateFilter: dateFilter
       });
       if (country) params.set("country", country);
       const res = await fetch(`/api/news?${params}`);
@@ -58,7 +66,7 @@ export default function NewsPage() {
     }
   }
 
-  useEffect(() => { load(); }, [country]);
+  useEffect(() => { load(); }, [country, dateFilter]);
 
   return (
     <div className="space-y-6">
@@ -66,7 +74,7 @@ export default function NewsPage() {
         <div>
           <h2 className="text-2xl font-bold text-white">News</h2>
           <p className="text-sm text-slate-400 mt-1">
-            Top 10 AI tools news · Today only
+            Top 10 AI news · {DATE_FILTERS.find(d => d.value === dateFilter)?.label}
           </p>
         </div>
         <button
@@ -76,6 +84,21 @@ export default function NewsPage() {
           <RefreshCw className="w-4 h-4" />
           Refresh
         </button>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {DATE_FILTERS.map((d) => (
+          <button
+            key={d.value}
+            onClick={() => setDateFilter(d.value)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border transition-colors ${
+              dateFilter === d.value ? "bg-brand-600 border-brand-500 text-white" : "bg-slate-800/50 border-slate-700/50 text-slate-300 hover:bg-slate-800"
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            {d.label}
+          </button>
+        ))}
       </div>
 
       <div className="flex flex-wrap gap-2">
