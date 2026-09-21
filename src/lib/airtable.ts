@@ -169,6 +169,7 @@ export async function listArticles(options: {
   search?: string;
   sentiment?: string;
   dateFilter?: "today" | "yesterday" | "week" | "all";
+  country?: string;
   sort?: "publishedAt" | "fetchedAt";
   order?: "asc" | "desc";
 }) {
@@ -179,6 +180,7 @@ export async function listArticles(options: {
     search,
     sentiment,
     dateFilter = "all",
+    country,
     sort = "publishedAt",
     order = "desc"
   } = options;
@@ -189,18 +191,21 @@ export async function listArticles(options: {
   if (category) filters.push(`{category} = '${category}'`);
   if (sentiment) filters.push(`{sentiment} = '${sentiment}'`);
 
+  if (country) {
+    filters.push(`OR(FIND('${country}', {sourceName}), FIND('${country}', {sourceDomain}))`);
+  }
+
   if (dateFilter && dateFilter !== "all") {
     const now = new Date();
-    let startDate: Date | null = null;
     if (dateFilter === "today") {
-      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       filters.push(`{publishedAt} >= '${startDate.toISOString()}'`);
     } else if (dateFilter === "yesterday") {
-      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+      const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
       const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       filters.push(`AND({publishedAt} >= '${startDate.toISOString()}', {publishedAt} < '${endDate.toISOString()}')`);
     } else if (dateFilter === "week") {
-      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       filters.push(`{publishedAt} >= '${startDate.toISOString()}'`);
     }
   }

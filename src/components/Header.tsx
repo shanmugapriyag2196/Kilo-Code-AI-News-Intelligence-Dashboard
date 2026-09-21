@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { RefreshCw, Brain, Newspaper, TrendingUp } from "lucide-react";
+import { RefreshCw, Brain, Newspaper, TrendingUp, Globe } from "lucide-react";
 
 export default function Header() {
   return (
@@ -18,6 +18,9 @@ export default function Header() {
           <nav className="hidden md:flex items-center gap-6">
             <Link href="/" className="text-sm text-slate-300 hover:text-white transition-colors flex items-center gap-2">
               <Newspaper className="w-4 h-4" /> Articles
+            </Link>
+            <Link href="/news" className="text-sm text-slate-300 hover:text-white transition-colors flex items-center gap-2">
+              <Globe className="w-4 h-4" /> News
             </Link>
             <Link href="/dashboard" className="text-sm text-slate-300 hover:text-white transition-colors flex items-center gap-2">
               <TrendingUp className="w-4 h-4" /> Dashboard
