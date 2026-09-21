@@ -35,12 +35,10 @@ function simpleSummary(text: string | null, max = 200): string | null {
   return cleaned.length > max ? cleaned.slice(0, max) + "..." : cleaned;
 }
 
-function guessCategory(article: RawNewsAPIArticle): string {
+function guessCategory(article: RawNewsAPIArticle): string | null {
   const hay = `${article.title || ""} ${article.description || ""}`.toLowerCase();
-  if (/(artificial intelligence|machine learning|deep learning|neural network|llm|generative ai|gpt|openai|anthropic|gemini|copilot|ai agent|automation)/i.test(hay)) return "Artificial Intelligence";
-  if (/(quantum|biology|space|physics|climate|energy|medical|research|science)/i.test(hay)) return "Science";
-  if (/(startup|funding|ipo|market|economy|finance|investment|revenue)/i.test(hay)) return "Business";
-  return "Technology";
+  if (/(artificial intelligence|machine learning|deep learning|neural network|llm|generative ai|gpt|openai|anthropic|gemini|copilot|ai agent|automation|devops|cybersecurity|cloud computing|data science|software|programming|developer|api|saas)/i.test(hay)) return "Artificial Intelligence";
+  return null;
 }
 
 function guessSentiment(text: string | null): "positive" | "neutral" | "negative" {
@@ -87,27 +85,20 @@ function extractDomain(url: string): string {
   }
 }
 
-function guessSubcategory(article: RawNewsAPIArticle, category: string): string {
+function guessSubcategory(article: RawNewsAPIArticle, category: string | null): string {
   const hay = `${article.title || ""} ${article.description || ""}`.toLowerCase();
   if (category === "Artificial Intelligence") {
     if (/robot|autonomous/i.test(hay)) return "Robotics";
     if (/vision|image|video/i.test(hay)) return "Computer Vision";
     if (/nlp|language|translation/i.test(hay)) return "NLP";
+    if (/devops|ci\/cd|docker|kubernetes|container/i.test(hay)) return "DevOps";
+    if (/cloud|aws|azure|gcp|serverless/i.test(hay)) return "Cloud";
+    if (/security|cybersecurity|vulnerability|encryption/i.test(hay)) return "Cybersecurity";
+    if (/data science|analytics|big data|statistics/i.test(hay)) return "Data Science";
     if (/chip|semiconductor|gpu|hardware/i.test(hay)) return "Hardware";
     return "Machine Learning";
   }
-  if (category === "Science") {
-    if (/space|planet|nasa/i.test(hay)) return "Space";
-    if (/climate|weather|environment/i.test(hay)) return "Climate";
-    if (/medical|drug|health|patient/i.test(hay)) return "Medical";
-    return "Research";
-  }
-  if (category === "Business") {
-    if (/startup|funding|venture/i.test(hay)) return "Startups";
-    if (/market|stock|trading/i.test(hay)) return "Markets";
-    return "Finance";
-  }
-  return "General";
+  return "Machine Learning";
 }
 
 async function fetchFromNewsAPI(category?: string): Promise<RawNewsAPIArticle[]> {
@@ -137,7 +128,7 @@ async function fetchFromNewsAPI(category?: string): Promise<RawNewsAPIArticle[]>
     }
   }
 
-  return articles.slice(0, 60);
+  return articles.slice(0, 10);
 }
 
 export async function refreshNews(): Promise<RefreshResult> {
@@ -165,6 +156,12 @@ export async function refreshNews(): Promise<RefreshResult> {
     }
 
     const category = guessCategory(raw);
+    // Skip non-IT/AI articles (Business, Science, Technology, etc.)
+    if (!category) {
+      duplicatesSkipped++;
+      continue;
+    }
+
     const description = truncate(raw.description);
     const content = truncate(raw.content, 800);
     const summary = simpleSummary(raw.content || raw.description);

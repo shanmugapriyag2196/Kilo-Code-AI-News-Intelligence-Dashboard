@@ -166,6 +166,7 @@ export async function listArticles(options: {
   page?: number;
   limit?: number;
   category?: string;
+  subcategory?: string;
   search?: string;
   sentiment?: string;
   dateFilter?: "today" | "yesterday" | "week" | "all";
@@ -177,6 +178,7 @@ export async function listArticles(options: {
     page = 1,
     limit = 20,
     category,
+    subcategory,
     search,
     sentiment,
     dateFilter = "all",
@@ -190,6 +192,11 @@ export async function listArticles(options: {
 
   if (category) filters.push(`{category} = '${category}'`);
   if (sentiment) filters.push(`{sentiment} = '${sentiment}'`);
+
+  if (subcategory) {
+    const escaped = subcategory.replace(/'/g, "\\'");
+    filters.push(`{subcategory} = '${escaped}'`);
+  }
 
   if (country) {
     const escapedCountry = country.replace(/'/g, "\\'");

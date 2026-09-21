@@ -6,6 +6,7 @@ export async function GET(req: NextRequest) {
   const page = parseInt(searchParams.get("page") || "1", 10);
   const limit = Math.min(parseInt(searchParams.get("limit") || "10", 10), 50);
   const category = searchParams.get("category") || undefined;
+  const subcategory = searchParams.get("subcategory") || undefined;
   const search = searchParams.get("search") || undefined;
   const sentiment = searchParams.get("sentiment") || undefined;
   const dateFilter = (searchParams.get("dateFilter") as any) || "all";
@@ -18,6 +19,7 @@ export async function GET(req: NextRequest) {
       page,
       limit,
       category,
+      subcategory,
       search,
       sentiment,
       dateFilter,

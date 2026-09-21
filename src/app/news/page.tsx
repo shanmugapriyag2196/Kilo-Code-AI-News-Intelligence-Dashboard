@@ -34,7 +34,7 @@ const COUNTRIES = [
 const TOPICS = [
   { label: "All Topics", value: "" },
   { label: "IT & Software", value: "software" },
-  { label: "AI Tools", value: "AI" },
+  { label: "AI Tools", value: "Artificial Intelligence" },
   { label: "DevOps", value: "DevOps" },
   { label: "Cybersecurity", value: "Cybersecurity" },
   { label: "Cloud", value: "Cloud" },
@@ -69,14 +69,16 @@ export default function NewsPage() {
         dateFilter: dateFilter
       });
       if (country) params.set("country", country);
-      // Use search for both AI tool and topic filtering
-      if (aiTool && topic) {
-        params.set("search", `${aiTool} ${topic}`);
-      } else if (aiTool) {
-        params.set("search", aiTool);
+      // Topic filtering: AI Tools uses category, others use subcategory
+      if (topic === "Artificial Intelligence") {
+        params.set("category", topic);
+      } else if (topic === "software") {
+        params.set("search", "software");
       } else if (topic) {
-        params.set("search", topic);
+        params.set("subcategory", topic);
       }
+      // AI tool filtering
+      if (aiTool) params.set("search", aiTool);
       const res = await fetch(`/api/news?${params}`);
       const data = await res.json();
       if (!res.ok || !data.success) {
