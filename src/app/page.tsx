@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import NewsCard from "@/components/NewsCard";
 import Filters from "@/components/Filters";
 import { RefreshButton } from "@/components/RefreshButton";
@@ -42,7 +41,7 @@ export default function NewsPage() {
   const [error, setError] = useState<string | null>(null);
   const [rawResponse, setRawResponse] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>({
-    category: "",
+    category: "Artificial Intelligence",
     search: "",
     sentiment: "",
     dateFilter: "all"

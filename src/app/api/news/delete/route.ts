@@ -4,7 +4,7 @@ import { getTable } from "@/lib/airtable";
 export async function DELETE(req: Request) {
   try {
     const url = new URL(req.url);
-    const dateFilter = url.searchParams.get("dateFilter") || "today";
+    const dateFilter = url.searchParams.get("dateFilter") || "all";
 
     const table = getTable();
 
