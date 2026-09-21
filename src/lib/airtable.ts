@@ -94,9 +94,13 @@ export async function getExistingTags(): Promise<string[]> {
 export async function getArticleById(id: string): Promise<any | null> {
   try {
     const table = getTable();
-    const record = await table.find(id);
-    return { id: record.id, ...record.fields };
-  } catch {
+    const record: any = await table.find(id);
+    const fields = { ...record.fields };
+    // Remove any user-defined "id" field so the Airtable record ID is preserved
+    delete fields.id;
+    return { id: record.id, ...fields };
+  } catch (e: any) {
+    console.error("getArticleById error:", id, e?.message);
     return null;
   }
 }

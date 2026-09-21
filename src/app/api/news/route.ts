@@ -22,12 +22,18 @@ export async function GET(req: NextRequest) {
       order
     });
 
+    // Flatten Airtable records: { id, fields: {...} } -> { id, ...fields }
+    const data = records.map((r: any) => ({
+      id: r.id,
+      ...(r.fields || {})
+    }));
+
     const stats = await getStats();
     const categories = await getDistinctCategories();
 
     return NextResponse.json({
       success: true,
-      data: records,
+      data,
       meta: { total, page, limit, lastRefreshed: stats.lastRefreshed },
       stats,
       categories
