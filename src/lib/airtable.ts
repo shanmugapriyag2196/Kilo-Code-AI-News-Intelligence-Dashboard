@@ -200,12 +200,12 @@ export async function listArticles(options: {
 
   if (country) {
     const escapedCountry = country.replace(/'/g, "\\'");
-    conditions.push(`OR(CONTAINS('${escapedCountry}', {sourceName}), CONTAINS('${escapedCountry}', {sourceDomain}))`);
+    conditions.push(`OR(CONTAINS({sourceName}, '${escapedCountry}'), CONTAINS({sourceDomain}, '${escapedCountry}'))`);
   }
 
   if (search) {
     const escaped = search.replace(/'/g, "\\'");
-    conditions.push(`OR(CONTAINS('${escaped}', {title}), CONTAINS('${escaped}', {summary}), CONTAINS('${escaped}', {content}))`);
+    conditions.push(`OR(CONTAINS({title}, '${escaped}'), CONTAINS({summary}, '${escaped}'), CONTAINS({content}, '${escaped}'))`);
   }
 
   const filterByFormula = conditions.length === 0
