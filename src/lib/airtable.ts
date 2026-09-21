@@ -212,11 +212,12 @@ export async function listArticles(options: {
 
   const listOptions: any = {
     sort: sortSpec,
-    pageSize: 1000
+    pageSize: 100
   };
   if (filterByFormula) listOptions.filterByFormula = filterByFormula;
 
-  let allRecords = await table.select(listOptions).all();
+  // Fetch all records using pagination (Airtable max page size is 100)
+  let allRecords = await fetchAllRecords(table);
 
   // Filter by date in JavaScript (publishedAt is text, not a date field)
   if (dateFilter && dateFilter !== "all") {
@@ -243,21 +244,34 @@ export async function listArticles(options: {
   }
 
   const total = allRecords.length;
-  const offset = (page - 1) * limit;
-  const pagedRecords = allRecords.slice(offset, offset + limit);
+  const pageOffset = (page - 1) * limit;
+  const pagedRecords = allRecords.slice(pageOffset, pageOffset + limit);
 
   return {
     records: pagedRecords,
     total,
     page,
     limit,
-    hasMore: offset + limit < total
+    hasMore: pageOffset + limit < total
   };
+}
+
+export async function fetchAllRecords(table: any, options: any = {}): Promise<any[]> {
+  let allRecords: any[] = [];
+  let offset: string | null = null;
+  do {
+    const pageOptions: any = { ...options, pageSize: 100 };
+    if (offset) pageOptions.offset = offset;
+    const pageRecords = await table.select(pageOptions).all();
+    allRecords = allRecords.concat(pageRecords);
+    offset = (pageRecords as any).offset || null;
+  } while (offset);
+  return allRecords;
 }
 
 export async function getStats() {
   const table = getTable();
-  const all = await table.select({ maxRecords: 1000 }).all();
+  const all = await fetchAllRecords(table);
 
   const byCategory: Record<string, number> = {};
   const bySentiment: Record<string, number> = { positive: 0, neutral: 0, negative: 0 };
@@ -283,7 +297,7 @@ export async function getStats() {
 
 export async function getDistinctCategories() {
   const table = getTable();
-  const all = await table.select({ maxRecords: 1000 }).all();
+  const all = await fetchAllRecords(table);
   const cats = new Set<string>();
   for (const r of all) {
     const c = (r.fields as any).category;
