@@ -4,10 +4,11 @@ import { listArticles, getStats, getDistinctCategories } from "@/lib/airtable";
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const page = parseInt(searchParams.get("page") || "1", 10);
-  const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10), 50);
+  const limit = Math.min(parseInt(searchParams.get("limit") || "10", 10), 50);
   const category = searchParams.get("category") || undefined;
   const search = searchParams.get("search") || undefined;
   const sentiment = searchParams.get("sentiment") || undefined;
+  const dateFilter = (searchParams.get("dateFilter") as any) || "all";
   const sort = (searchParams.get("sort") as any) || "publishedAt";
   const order = (searchParams.get("order") as any) || "desc";
 
@@ -18,6 +19,7 @@ export async function GET(req: NextRequest) {
       category,
       search,
       sentiment,
+      dateFilter,
       sort,
       order
     });

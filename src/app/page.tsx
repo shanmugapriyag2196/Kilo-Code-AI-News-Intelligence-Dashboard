@@ -32,9 +32,10 @@ type Filters = {
   category: string;
   search: string;
   sentiment: string;
+  dateFilter: "today" | "yesterday" | "week" | "all";
 };
 
-export default function NewsPage({ initialFilters }: { initialFilters?: Partial<Filters> } = {}) {
+export default function NewsPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [meta, setMeta] = useState<Meta | null>(null);
@@ -44,7 +45,7 @@ export default function NewsPage({ initialFilters }: { initialFilters?: Partial<
     category: "",
     search: "",
     sentiment: "",
-    ...initialFilters
+    dateFilter: "all"
   });
   const [loading, setLoading] = useState(true);
 
@@ -55,10 +56,11 @@ export default function NewsPage({ initialFilters }: { initialFilters?: Partial<
     try {
       const params = new URLSearchParams({
         page: String(page),
-        limit: "20",
+        limit: "10",
         ...(filters.category && { category: filters.category }),
         ...(filters.search && { search: filters.search }),
-        ...(filters.sentiment && { sentiment: filters.sentiment })
+        ...(filters.sentiment && { sentiment: filters.sentiment }),
+        ...(filters.dateFilter !== "all" && { dateFilter: filters.dateFilter })
       });
       const res = await fetch(`/api/news?${params}`);
       const data = await res.json();
@@ -89,7 +91,7 @@ export default function NewsPage({ initialFilters }: { initialFilters?: Partial<
             {meta ? `${meta.total} articles · Last refreshed: ${meta.lastRefreshed ? new Date(meta.lastRefreshed).toLocaleString() : "Never"}` : "Loading..."}
           </p>
         </div>
-        <RefreshButton />
+        <RefreshButton onRefreshed={() => load(1)} />
       </div>
 
       <Filters
@@ -110,7 +112,7 @@ export default function NewsPage({ initialFilters }: { initialFilters?: Partial<
         </div>
       )}
 
-{loading ? (
+      {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="h-64 bg-slate-800/30 rounded-xl animate-pulse" />

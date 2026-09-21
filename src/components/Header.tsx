@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { RefreshCw, Brain, Newspaper, TrendingUp, BookOpen, Star } from "lucide-react";
+import { RefreshCw, Brain, Newspaper, TrendingUp } from "lucide-react";
 
 export default function Header() {
   return (
@@ -21,12 +21,6 @@ export default function Header() {
             </Link>
             <Link href="/dashboard" className="text-sm text-slate-300 hover:text-white transition-colors flex items-center gap-2">
               <TrendingUp className="w-4 h-4" /> Dashboard
-            </Link>
-            <Link href="/read" className="text-sm text-slate-300 hover:text-white transition-colors flex items-center gap-2">
-              <BookOpen className="w-4 h-4" /> Read Later
-            </Link>
-            <Link href="/favorites" className="text-sm text-slate-300 hover:text-white transition-colors flex items-center gap-2">
-              <Star className="w-4 h-4" /> Favorites
             </Link>
           </nav>
           <form action="/api/news/refresh" method="POST">

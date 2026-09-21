@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Filter, X } from "lucide-react";
+import { Search, Filter, X, Calendar } from "lucide-react";
 
 interface FiltersProps {
   categories: string[];
@@ -9,6 +9,7 @@ interface FiltersProps {
     category: string;
     search: string;
     sentiment: string;
+    dateFilter: "today" | "yesterday" | "week" | "all";
   };
   onChange: (filters: FiltersProps["value"]) => void;
 }
@@ -21,6 +22,13 @@ export default function Filters({ categories, value, onChange }: FiltersProps) {
     { label: "Positive", value: "positive" },
     { label: "Neutral", value: "neutral" },
     { label: "Negative", value: "negative" }
+  ];
+
+  const dateOptions = [
+    { label: "All Time", value: "all" },
+    { label: "Today", value: "today" },
+    { label: "Yesterday", value: "yesterday" },
+    { label: "Last 7 Days", value: "week" }
   ];
 
   return (
@@ -53,6 +61,21 @@ export default function Filters({ categories, value, onChange }: FiltersProps) {
           <Filter className="w-4 h-4" />
           Filters
         </button>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {dateOptions.map((d) => (
+          <button
+            key={d.value}
+            onClick={() => onChange({ ...value, dateFilter: d.value as any })}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border transition-colors ${
+              value.dateFilter === d.value ? "bg-brand-600 border-brand-500 text-white" : "bg-slate-800/50 border-slate-700/50 text-slate-300 hover:bg-slate-800"
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            {d.label}
+          </button>
+        ))}
       </div>
 
       {open && (
