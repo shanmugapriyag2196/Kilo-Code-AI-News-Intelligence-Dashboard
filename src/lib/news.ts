@@ -37,7 +37,8 @@ function simpleSummary(text: string | null, max = 200): string | null {
 
 function guessCategory(article: RawNewsAPIArticle): string | null {
   const hay = `${article.title || ""} ${article.description || ""}`.toLowerCase();
-  if (/(artificial intelligence|machine learning|deep learning|neural network|llm|generative ai|gpt|openai|anthropic|gemini|copilot|ai agent|automation|devops|cybersecurity|cloud computing|data science|software|programming|developer|api|saas)/i.test(hay)) return "Artificial Intelligence";
+  // Broad AI/tech keywords — articles from NewsAPI AI queries are relevant
+  if (/(ai|artificial|machine learning|deep learning|neural|llm|generative|gpt|openai|anthropic|gemini|copilot|chatbot|automation|robot|software|developer|programming|api|saas|cloud|devops|cybersecurity|data science|analytics|algorithm|model|inference|training|tensor|transformer|diffusion|stable diffusion|midjourney|dall-e|voice|speech|nlp|computer vision|semiconductor|chip|gpu|hardware|startup|tech|technology|digital|compute|intel|nvidia|amd|qualcomm|meta|google|apple|microsoft|amazon)/i.test(hay)) return "Artificial Intelligence";
   return null;
 }
 
