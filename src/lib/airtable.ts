@@ -192,7 +192,8 @@ export async function listArticles(options: {
   if (sentiment) filters.push(`{sentiment} = '${sentiment}'`);
 
   if (country) {
-    filters.push(`OR(FIND('${country}', {sourceName}), FIND('${country}', {sourceDomain}))`);
+    const escapedCountry = country.replace(/'/g, "\\'");
+    filters.push(`OR(CONTAINS('${escapedCountry}', {sourceName}), CONTAINS('${escapedCountry}', {sourceDomain}))`);
   }
 
   if (dateFilter && dateFilter !== "all") {
@@ -213,7 +214,7 @@ export async function listArticles(options: {
   if (search) {
     const escaped = search.replace(/'/g, "\\'");
     filters.push(
-      `OR(SEARCH(LOWER('${escaped}'), LOWER({title})), SEARCH(LOWER('${escaped}'), LOWER({summary})), SEARCH(LOWER('${escaped}'), LOWER({content})))`
+      `OR(CONTAINS('${escaped}', {title}), CONTAINS('${escaped}', {summary}), CONTAINS('${escaped}', {content}))`
     );
   }
 
