@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Globe, RefreshCw, Calendar } from "lucide-react";
-import SimpleNewsCard from "@/components/SimpleNewsCard";
 
 interface Article {
   id?: string;
@@ -117,9 +116,9 @@ export default function NewsPage() {
       )}
 
       {loading ? (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {[...Array(10)].map((_, i) => (
-            <div key={i} className="h-16 bg-slate-800/30 rounded-lg animate-pulse" />
+            <div key={i} className="h-12 bg-slate-800/30 rounded animate-pulse" />
           ))}
         </div>
       ) : articles.length === 0 ? (
@@ -131,11 +130,37 @@ export default function NewsPage() {
           </p>
         </div>
       ) : (
-        <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl divide-y divide-slate-700/50">
-          {articles.map((a, i) => (
-            <SimpleNewsCard key={a.id || a.url} article={a} index={i} />
-          ))}
-        </div>
+        <ol className="space-y-3">
+          {articles.map((a, i) => {
+            const dateStr = new Date(a.publishedAt).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric"
+            });
+            return (
+              <li key={a.id || a.url} className="flex gap-3 text-sm">
+                <span className="flex-shrink-0 w-6 h-6 rounded-full bg-brand-500/15 text-brand-300 text-xs font-bold flex items-center justify-center mt-0.5">
+                  {i + 1}
+                </span>
+                <div className="flex-1">
+                  <p className="text-slate-200 leading-relaxed">
+                    <a
+                      href={a.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-brand-300 transition-colors"
+                    >
+                      {a.title}
+                    </a>
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {a.sourceName} · {dateStr}
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
       )}
     </div>
   );
