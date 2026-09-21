@@ -33,12 +33,12 @@ const COUNTRIES = [
 
 const TOPICS = [
   { label: "All Topics", value: "" },
-  { label: "IT & Software", value: "IT" },
+  { label: "IT & Software", value: "software" },
   { label: "AI Tools", value: "AI" },
   { label: "DevOps", value: "DevOps" },
-  { label: "Cybersecurity", value: "Security" },
+  { label: "Cybersecurity", value: "Cybersecurity" },
   { label: "Cloud", value: "Cloud" },
-  { label: "Data Science", value: "Data" }
+  { label: "Data Science", value: "Data Science" }
 ];
 
 const DATE_FILTERS = [
@@ -61,13 +61,22 @@ export default function NewsPage() {
     setLoading(true);
     setError(null);
     try {
+      // Show 5 items when topic or AI tool filter is active, 10 otherwise
+      const hasFilter = topic || aiTool;
+      const limit = hasFilter ? "5" : "10";
       const params = new URLSearchParams({
-        limit: "10",
+        limit: limit,
         dateFilter: dateFilter
       });
       if (country) params.set("country", country);
-      if (aiTool) params.set("search", aiTool);
-      if (topic) params.set("category", topic);
+      // Use search for both AI tool and topic filtering
+      if (aiTool && topic) {
+        params.set("search", `${aiTool} ${topic}`);
+      } else if (aiTool) {
+        params.set("search", aiTool);
+      } else if (topic) {
+        params.set("search", topic);
+      }
       const res = await fetch(`/api/news?${params}`);
       const data = await res.json();
       if (!res.ok || !data.success) {
