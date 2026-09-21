@@ -196,21 +196,6 @@ export async function listArticles(options: {
     filters.push(`OR(CONTAINS('${escapedCountry}', {sourceName}), CONTAINS('${escapedCountry}', {sourceDomain}))`);
   }
 
-  if (dateFilter && dateFilter !== "all") {
-    const now = new Date();
-    if (dateFilter === "today") {
-      const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      filters.push(`{publishedAt} >= '${startDate.toISOString()}'`);
-    } else if (dateFilter === "yesterday") {
-      const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-      const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      filters.push(`AND({publishedAt} >= '${startDate.toISOString()}', {publishedAt} < '${endDate.toISOString()}')`);
-    } else if (dateFilter === "week") {
-      const startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      filters.push(`{publishedAt} >= '${startDate.toISOString()}'`);
-    }
-  }
-
   if (search) {
     const escaped = search.replace(/'/g, "\\'");
     filters.push(
@@ -225,33 +210,48 @@ export async function listArticles(options: {
       ? [{ field: "fetchedAt", direction: order }]
       : [{ field: "publishedAt", direction: order }];
 
-  const offset = (page - 1) * limit;
-
   const listOptions: any = {
     sort: sortSpec,
-    pageSize: limit,
-    offset
+    pageSize: 1000
   };
   if (filterByFormula) listOptions.filterByFormula = filterByFormula;
 
-  const allRecords = await table
-    .select(listOptions)
-    .all();
+  let allRecords = await table.select(listOptions).all();
 
-  const countOptions: any = { maxRecords: 1 };
-  if (filterByFormula) countOptions.filterByFormula = filterByFormula;
+  // Filter by date in JavaScript (publishedAt is text, not a date field)
+  if (dateFilter && dateFilter !== "all") {
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date | null = null;
+    if (dateFilter === "today") {
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    } else if (dateFilter === "yesterday") {
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+      endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    } else if (dateFilter === "week") {
+      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    }
+    const startMs = startDate!.getTime();
+    const endMs = endDate ? endDate.getTime() : Infinity;
 
-  const total = await table
-    .select(countOptions)
-    .all()
-    .then((r) => r.length);
+    allRecords = allRecords.filter((r: any) => {
+      const pub = r.fields?.publishedAt;
+      if (!pub) return false;
+      const pubDate = new Date(pub).getTime();
+      return !isNaN(pubDate) && pubDate >= startMs && pubDate < endMs;
+    });
+  }
+
+  const total = allRecords.length;
+  const offset = (page - 1) * limit;
+  const pagedRecords = allRecords.slice(offset, offset + limit);
 
   return {
-    records: allRecords,
+    records: pagedRecords,
     total,
     page,
     limit,
-    hasMore: allRecords.length === limit
+    hasMore: offset + limit < total
   };
 }
 
