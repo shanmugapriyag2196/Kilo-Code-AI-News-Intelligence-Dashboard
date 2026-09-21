@@ -28,10 +28,17 @@ const AI_TOOLS = [
 const COUNTRIES = [
   { label: "All Countries", value: "" },
   { label: "India", value: "India" },
-  { label: "United States", value: "US" },
-  { label: "United Kingdom", value: "UK" },
-  { label: "Canada", value: "Canada" },
-  { label: "Australia", value: "Australia" }
+  { label: "United States", value: "US" }
+];
+
+const TOPICS = [
+  { label: "All Topics", value: "" },
+  { label: "IT & Software", value: "IT" },
+  { label: "AI Tools", value: "AI" },
+  { label: "DevOps", value: "DevOps" },
+  { label: "Cybersecurity", value: "Security" },
+  { label: "Cloud", value: "Cloud" },
+  { label: "Data Science", value: "Data" }
 ];
 
 const DATE_FILTERS = [
@@ -44,6 +51,7 @@ const DATE_FILTERS = [
 export default function NewsPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [country, setCountry] = useState("");
+  const [topic, setTopic] = useState("");
   const [aiTool, setAiTool] = useState("");
   const [dateFilter, setDateFilter] = useState("today");
   const [loading, setLoading] = useState(true);
@@ -53,14 +61,13 @@ export default function NewsPage() {
     setLoading(true);
     setError(null);
     try {
-      // Show 5 items for country filter, 10 for All
-      const limit = country ? "5" : "10";
       const params = new URLSearchParams({
-        limit: limit,
+        limit: "10",
         dateFilter: dateFilter
       });
       if (country) params.set("country", country);
       if (aiTool) params.set("search", aiTool);
+      if (topic) params.set("category", topic);
       const res = await fetch(`/api/news?${params}`);
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -75,7 +82,7 @@ export default function NewsPage() {
     }
   }
 
-  useEffect(() => { load(); }, [country, aiTool, dateFilter]);
+  useEffect(() => { load(); }, [country, aiTool, topic, dateFilter]);
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -112,6 +119,20 @@ export default function NewsPage() {
           >
             <Globe className="w-3.5 h-3.5" />
             {c.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {TOPICS.map((t) => (
+          <button
+            key={t.value}
+            onClick={() => setTopic(t.value)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border transition-colors ${
+              topic === t.value ? "bg-brand-600 border-brand-500 text-white" : "bg-slate-800/50 border-slate-700/50 text-slate-300 hover:bg-slate-800"
+            }`}
+          >
+            {t.label}
           </button>
         ))}
       </div>
