@@ -17,7 +17,7 @@ export default function Header() {
           </Link>
           <nav className="hidden md:flex items-center gap-6">
             <Link href="/" className="text-sm text-slate-300 hover:text-white transition-colors flex items-center gap-2">
-              <Newspaper className="w-4 h-4" /> News
+              <Newspaper className="w-4 h-4" /> Articles
             </Link>
             <Link href="/dashboard" className="text-sm text-slate-300 hover:text-white transition-colors flex items-center gap-2">
               <TrendingUp className="w-4 h-4" /> Dashboard

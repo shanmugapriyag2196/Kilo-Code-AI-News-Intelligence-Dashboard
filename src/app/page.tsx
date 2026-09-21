@@ -86,7 +86,7 @@ export default function NewsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">AI News Feed</h2>
+          <h2 className="text-2xl font-bold text-white">Articles</h2>
           <p className="text-sm text-slate-400 mt-1">
             {meta ? `${meta.total} articles · Last refreshed: ${meta.lastRefreshed ? new Date(meta.lastRefreshed).toLocaleString() : "Never"}` : "Loading..."}
           </p>
