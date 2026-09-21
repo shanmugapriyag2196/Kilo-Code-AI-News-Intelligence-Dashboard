@@ -7,13 +7,15 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
   try {
     const table = getTable();
-    const record = await table.find(params.id);
-    const fields = (record as any).fields || {};
+    const record: any = await table.find(params.id);
+    const fields = { ...(record.fields || {}) };
+    // Remove user-defined "id" field so it doesn't overwrite the Airtable record ID
+    delete fields.id;
     return new Response(
       JSON.stringify({
         success: true,
         data: {
-          id: (record as any).id,
+          id: record.id,
           ...fields
         }
       }),

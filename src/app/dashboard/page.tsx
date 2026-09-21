@@ -1,4 +1,6 @@
-import { Suspense } from "react";
+"use client";
+
+import { useEffect, useState } from "react";
 import StatsCards from "@/components/StatsCards";
 import { CategoryChart } from "@/components/CategoryChart";
 import { RefreshButton } from "@/components/RefreshButton";
@@ -11,20 +13,61 @@ interface StatsData {
   lastRefreshed: string | null;
 }
 
-interface DashboardResponse {
-  success: boolean;
-  data: StatsData;
-}
+export default function DashboardPage() {
+  const [stats, setStats] = useState<StatsData | null>(null);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-async function getDashboardData(): Promise<StatsData> {
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-  const res = await fetch(`${baseUrl}/api/stats`, { cache: "no-store" });
-  const json: DashboardResponse = await res.json();
-  return json.data;
-}
+  async function load() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/stats", { cache: "no-store" });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setError(data.error || "Failed to load stats");
+        return;
+      }
+      setStats(data.data);
+      setCategories(data.data.categories || []);
+    } catch (e: any) {
+      setError(e.message || "Network error");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-export default async function DashboardPage() {
-  const stats = await getDashboardData();
+  useEffect(() => { load(); }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-48 bg-slate-800/50 rounded animate-pulse" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-24 bg-slate-800/30 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !stats) {
+    return (
+      <div className="text-center py-16">
+        <div className="text-6xl mb-4">⚠️</div>
+        <h3 className="text-xl font-semibold text-white mb-2">Failed to load dashboard</h3>
+        <p className="text-rose-400 text-sm mb-6">{error || "No data available"}</p>
+        <button
+          onClick={load}
+          className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -38,16 +81,10 @@ export default async function DashboardPage() {
               : "Never"}
           </p>
         </div>
-        <RefreshButton />
+        <RefreshButton onRefreshed={load} />
       </div>
 
-      <Suspense fallback={<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-24 bg-slate-800/30 rounded-xl animate-pulse" />
-        ))}
-      </div>}>
-        <StatsCards stats={stats} />
-      </Suspense>
+      <StatsCards stats={stats} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">

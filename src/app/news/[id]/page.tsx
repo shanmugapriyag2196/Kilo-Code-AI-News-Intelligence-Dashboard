@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, Calendar, Tag, Brain, Globe } from "lucide-react";
-import { getArticleById } from "@/lib/airtable";
 
 interface Article {
   id?: string;
@@ -29,12 +28,13 @@ export default function ArticlePage({ params }: { params: { id: string } }) {
   useEffect(() => {
     async function load() {
       try {
-        const data = await getArticleById(params.id);
-        if (!data) {
-          setError("Article not found");
-        } else {
-          setArticle(data as Article);
+        const res = await fetch(`/api/news/${params.id}`, { cache: "no-store" });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          setError(data.error || "Article not found");
+          return;
         }
+        setArticle(data.data as Article);
       } catch (e: any) {
         setError(e?.message || "Failed to load article");
       } finally {
