@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, Calendar, Tag, Brain, Globe } from "lucide-react";
+import { getArticleById } from "@/lib/airtable";
 
 export const dynamic = "force-dynamic";
 
@@ -20,30 +21,8 @@ interface Article {
   tags: string[];
 }
 
-async function getArticle(id: string): Promise<{ article: Article | null; error: string | null }> {
-  try {
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : (process.env.NEXTAUTH_URL || "http://localhost:3000");
-    const res = await fetch(`${baseUrl}/api/news/${id}`, { cache: "no-store" });
-    const text = await res.text();
-    let data: any;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      return { article: null, error: `Server returned non-JSON response (status ${res.status})` };
-    }
-    if (!res.ok || !data.success) {
-      return { article: null, error: data.error || `HTTP ${res.status}` };
-    }
-    return { article: data.data || null, error: null };
-  } catch (e: any) {
-    return { article: null, error: e.message || "Network error" };
-  }
-}
-
 export default async function ArticlePage({ params }: { params: { id: string } }) {
-  const { article, error } = await getArticle(params.id);
+  const article = (await getArticleById(params.id)) as Article | null;
 
   if (!article) {
     return (
@@ -57,7 +36,6 @@ export default async function ArticlePage({ params }: { params: { id: string } }
           <p className="text-slate-400 mb-2">
             Could not find article with ID: <code className="text-brand-300">{params.id}</code>
           </p>
-          {error && <p className="text-rose-400 text-sm mb-6">Error: {error}</p>}
           <p className="text-slate-500 text-sm">
             Try clicking <strong>Refresh News</strong> on the main page first.
           </p>

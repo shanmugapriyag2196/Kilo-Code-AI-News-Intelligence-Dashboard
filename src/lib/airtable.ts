@@ -91,6 +91,16 @@ export async function getExistingTags(): Promise<string[]> {
   }
 }
 
+export async function getArticleById(id: string): Promise<any | null> {
+  try {
+    const table = getTable();
+    const record = await table.find(id);
+    return { id: record.id, ...record.fields };
+  } catch {
+    return null;
+  }
+}
+
 export async function createArticle(fields: Record<string, any>, existingTags?: string[]) {
   const table = getTable();
   if (existingTags && Array.isArray(fields.tags)) {
