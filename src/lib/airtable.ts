@@ -224,7 +224,7 @@ export async function listArticles(options: {
   if (filterByFormula) listOptions.filterByFormula = filterByFormula;
 
   // Fetch all records using pagination (Airtable max page size is 100)
-  let allRecords = await fetchAllRecords(table);
+  let allRecords = await fetchAllRecords(table, listOptions);
 
   // Filter by date in JavaScript (publishedAt is text, not a date field)
   if (dateFilter && dateFilter !== "all") {
