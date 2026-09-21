@@ -2,8 +2,5 @@
   "buildCommand": "npm run build",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "regions": ["sfo1"],
-  "rewrites": [
-    { "source": "/api/news/refresh", "destination": "/api/news/refresh" }
-  ]
+  "regions": ["sfo1"]
 }

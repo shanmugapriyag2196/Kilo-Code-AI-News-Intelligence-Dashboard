@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, Calendar, Tag, Brain, Globe } from "lucide-react";
 
@@ -25,7 +26,13 @@ async function getArticle(id: string): Promise<{ article: Article | null; error:
       ? `https://${process.env.VERCEL_URL}`
       : (process.env.NEXTAUTH_URL || "http://localhost:3000");
     const res = await fetch(`${baseUrl}/api/news/${id}`, { cache: "no-store" });
-    const data = await res.json();
+    const text = await res.text();
+    let data: any;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      return { article: null, error: `Server returned non-JSON response (status ${res.status})` };
+    }
     if (!res.ok || !data.success) {
       return { article: null, error: data.error || `HTTP ${res.status}` };
     }
