@@ -188,29 +188,31 @@ export async function listArticles(options: {
   } = options;
 
   const table = getTable();
-  const filters: string[] = [];
+  const conditions: string[] = [];
 
-  if (category) filters.push(`{category} = '${category}'`);
-  if (sentiment) filters.push(`{sentiment} = '${sentiment}'`);
+  if (category) conditions.push(`{category} = '${category}'`);
+  if (sentiment) conditions.push(`{sentiment} = '${sentiment}'`);
 
   if (subcategory) {
     const escaped = subcategory.replace(/'/g, "\\'");
-    filters.push(`{subcategory} = '${escaped}'`);
+    conditions.push(`{subcategory} = '${escaped}'`);
   }
 
   if (country) {
     const escapedCountry = country.replace(/'/g, "\\'");
-    filters.push(`OR(CONTAINS('${escapedCountry}', {sourceName}), CONTAINS('${escapedCountry}', {sourceDomain}))`);
+    conditions.push(`OR(CONTAINS('${escapedCountry}', {sourceName}), CONTAINS('${escapedCountry}', {sourceDomain}))`);
   }
 
   if (search) {
     const escaped = search.replace(/'/g, "\\'");
-    filters.push(
-      `OR(CONTAINS('${escaped}', {title}), CONTAINS('${escaped}', {summary}), CONTAINS('${escaped}', {content}))`
-    );
+    conditions.push(`OR(CONTAINS('${escaped}', {title}), CONTAINS('${escaped}', {summary}), CONTAINS('${escaped}', {content}))`);
   }
 
-  const filterByFormula = filters.length ? filters.join(" AND ") : undefined;
+  const filterByFormula = conditions.length === 0
+    ? undefined
+    : conditions.length === 1
+      ? conditions[0]
+      : `AND(${conditions.join(", ")})`;
 
   const sortSpec =
     sort === "fetchedAt"
