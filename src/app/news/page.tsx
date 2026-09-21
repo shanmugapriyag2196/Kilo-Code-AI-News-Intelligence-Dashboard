@@ -15,7 +15,6 @@ interface Article {
 }
 
 const AI_TOOLS = [
-  { label: "All AI Tools", value: "" },
   { label: "OpenAI", value: "OpenAI" },
   { label: "ChatGPT", value: "ChatGPT" },
   { label: "Anthropic", value: "Anthropic" },
