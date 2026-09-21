@@ -14,6 +14,18 @@ interface Article {
   sentiment: "positive" | "neutral" | "negative";
 }
 
+const AI_TOOLS = [
+  { label: "All AI Tools", value: "" },
+  { label: "OpenAI", value: "OpenAI" },
+  { label: "ChatGPT", value: "ChatGPT" },
+  { label: "Anthropic", value: "Anthropic" },
+  { label: "Claude", value: "Claude" },
+  { label: "Google Gemini", value: "Gemini" },
+  { label: "Kimi K3", value: "Kimi" },
+  { label: "DeepMind", value: "DeepMind" },
+  { label: "AI Agents", value: "Agentic" }
+];
+
 const COUNTRIES = [
   { label: "All Countries", value: "" },
   { label: "India", value: "India" },
@@ -33,6 +45,7 @@ const DATE_FILTERS = [
 export default function NewsPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [country, setCountry] = useState("");
+  const [aiTool, setAiTool] = useState("");
   const [dateFilter, setDateFilter] = useState("today");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,11 +54,14 @@ export default function NewsPage() {
     setLoading(true);
     setError(null);
     try {
+      // Show 5 items for country filter, 10 for All
+      const limit = country ? "5" : "10";
       const params = new URLSearchParams({
-        limit: "10",
+        limit: limit,
         dateFilter: dateFilter
       });
       if (country) params.set("country", country);
+      if (aiTool) params.set("search", aiTool);
       const res = await fetch(`/api/news?${params}`);
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -60,7 +76,7 @@ export default function NewsPage() {
     }
   }
 
-  useEffect(() => { load(); }, [country, dateFilter]);
+  useEffect(() => { load(); }, [country, aiTool, dateFilter]);
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -97,6 +113,20 @@ export default function NewsPage() {
           >
             <Globe className="w-3.5 h-3.5" />
             {c.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {AI_TOOLS.map((t) => (
+          <button
+            key={t.value}
+            onClick={() => setAiTool(t.value)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border transition-colors ${
+              aiTool === t.value ? "bg-brand-600 border-brand-500 text-white" : "bg-slate-800/50 border-slate-700/50 text-slate-300 hover:bg-slate-800"
+            }`}
+          >
+            {t.label}
           </button>
         ))}
       </div>

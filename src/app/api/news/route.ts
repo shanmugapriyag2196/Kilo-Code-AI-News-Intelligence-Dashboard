@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
   const search = searchParams.get("search") || undefined;
   const sentiment = searchParams.get("sentiment") || undefined;
   const dateFilter = (searchParams.get("dateFilter") as any) || "all";
+  const country = searchParams.get("country") || undefined;
   const sort = (searchParams.get("sort") as any) || "publishedAt";
   const order = (searchParams.get("order") as any) || "desc";
 
@@ -20,6 +21,7 @@ export async function GET(req: NextRequest) {
       search,
       sentiment,
       dateFilter,
+      country,
       sort,
       order
     });
