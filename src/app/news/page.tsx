@@ -96,79 +96,98 @@ export default function NewsPage() {
   useEffect(() => { load(); }, [country, aiTool, topic, dateFilter]);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-white">News</h2>
-        <p className="text-sm text-slate-400 mt-1">
-          Top 10 AI news · {DATE_FILTERS.find(d => d.value === dateFilter)?.label}
-        </p>
+    <div className="max-w-5xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-white">News Feed</h2>
+          <p className="text-sm text-slate-400 mt-1">
+            Top AI news · {DATE_FILTERS.find(d => d.value === dateFilter)?.label}
+          </p>
+        </div>
+        <button
+          onClick={load}
+          className="flex items-center gap-2 text-sm bg-brand-600 hover:bg-brand-700 text-white px-3 py-2 rounded-lg transition-colors"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Refresh
+        </button>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {DATE_FILTERS.map((d) => (
-          <button
-            key={d.value}
-            onClick={() => setDateFilter(d.value)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-              dateFilter === d.value ? "bg-brand-600 border-brand-500 text-white" : "bg-slate-800/50 border-slate-700/50 text-slate-300 hover:bg-slate-800"
-            }`}
-          >
-            <Calendar className="w-3.5 h-3.5" />
-            {d.label}
-          </button>
-        ))}
-      </div>
+      {/* Filter bar */}
+      <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-4 space-y-4">
+        {/* Date */}
+        <div>
+          <label className="text-xs font-medium text-slate-400 mb-2 block">Date Range</label>
+          <div className="flex flex-wrap gap-2">
+            {DATE_FILTERS.map((d) => (
+              <button
+                key={d.value}
+                onClick={() => setDateFilter(d.value)}
+                className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
+                  dateFilter === d.value ? "bg-brand-600 border-brand-500 text-white" : "bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700"
+                }`}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-      <div className="flex flex-wrap gap-2">
-        {COUNTRIES.map((c) => (
-          <button
-            key={c.value}
-            onClick={() => setCountry(c.value)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-              country === c.value ? "bg-brand-600 border-brand-500 text-white" : "bg-slate-800/50 border-slate-700/50 text-slate-300 hover:bg-slate-800"
-            }`}
-          >
-            <Globe className="w-3.5 h-3.5" />
-            {c.label}
-          </button>
-        ))}
-      </div>
+        {/* Country */}
+        <div>
+          <label className="text-xs font-medium text-slate-400 mb-2 block">Country</label>
+          <div className="flex flex-wrap gap-2">
+            {COUNTRIES.map((c) => (
+              <button
+                key={c.value}
+                onClick={() => setCountry(c.value)}
+                className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
+                  country === c.value ? "bg-brand-600 border-brand-500 text-white" : "bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700"
+                }`}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-      <div className="flex flex-wrap gap-2">
-        {TOPICS.map((t) => (
-          <button
-            key={t.value}
-            onClick={() => setTopic(t.value)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-              topic === t.value ? "bg-brand-600 border-brand-500 text-white" : "bg-slate-800/50 border-slate-700/50 text-slate-300 hover:bg-slate-800"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+        {/* Topic */}
+        <div>
+          <label className="text-xs font-medium text-slate-400 mb-2 block">Topic</label>
+          <div className="flex flex-wrap gap-2">
+            {TOPICS.map((t) => (
+              <button
+                key={t.value}
+                onClick={() => setTopic(t.value)}
+                className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
+                  topic === t.value ? "bg-brand-600 border-brand-500 text-white" : "bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-      <div className="flex flex-wrap gap-2">
-        {AI_TOOLS.map((t) => (
-          <button
-            key={t.value}
-            onClick={() => setAiTool(t.value)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-              aiTool === t.value ? "bg-brand-600 border-brand-500 text-white" : "bg-slate-800/50 border-slate-700/50 text-slate-300 hover:bg-slate-800"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+        {/* AI Tool */}
+        <div>
+          <label className="text-xs font-medium text-slate-400 mb-2 block">AI Tool / Company</label>
+          <div className="flex flex-wrap gap-2">
+            {AI_TOOLS.map((t) => (
+              <button
+                key={t.value}
+                onClick={() => setAiTool(t.value)}
+                className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
+                  aiTool === t.value ? "bg-brand-600 border-brand-500 text-white" : "bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
-
-      <button
-        onClick={load}
-        className="flex items-center gap-2 text-sm bg-brand-600 hover:bg-brand-700 text-white px-3 py-2 rounded-lg transition-colors"
-      >
-        <RefreshCw className="w-4 h-4" />
-        Refresh
-      </button>
 
       {error && (
         <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl p-4 text-rose-300 text-sm">
@@ -179,7 +198,7 @@ export default function NewsPage() {
       {loading ? (
         <div className="space-y-3">
           {[...Array(10)].map((_, i) => (
-            <div key={i} className="h-12 bg-slate-800/30 rounded animate-pulse" />
+            <div key={i} className="h-16 bg-slate-800/30 rounded-xl animate-pulse" />
           ))}
         </div>
       ) : articles.length === 0 ? (
