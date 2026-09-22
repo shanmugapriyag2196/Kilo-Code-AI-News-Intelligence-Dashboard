@@ -114,23 +114,21 @@ async function fetchFromNewsAPI(category?: string): Promise<RawNewsAPIArticle[]>
   const articles: RawNewsAPIArticle[] = [];
   const errors: string[] = [];
 
-  // Try top-headlines first (free-tier compatible)
-  const endpoints = [
-    `https://newsapi.org/v2/top-headlines?category=technology&language=en&pageSize=40&apiKey=${NEWSAPI_KEY}`,
-    `https://newsapi.org/v2/everything?q=artificial+intelligence&language=en&sortBy=publishedAt&pageSize=40&apiKey=${NEWSAPI_KEY}`
-  ];
+  // Use /everything (worked in first trial)
+  const queries = ["artificial intelligence", "machine learning", "AI technology", "LLM", "generative AI"];
 
-  for (const url of endpoints) {
+  for (const q of queries) {
+    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(q)}&language=en&sortBy=publishedAt&pageSize=40&apiKey=${NEWSAPI_KEY}`;
     try {
       const res = await fetch(url);
       if (!res.ok) {
         const txt = await res.text();
-        errors.push(`HTTP ${res.status}: ${txt.slice(0, 300)}`);
+        errors.push(`${q}: HTTP ${res.status} ${txt.slice(0, 200)}`);
         continue;
       }
       const data: NewsAPIResponse = await res.json();
       if (data.status === "error") {
-        errors.push(data.message || "Unknown NewsAPI error");
+        errors.push(`${q}: ${data.message}`);
         continue;
       }
       for (const a of data.articles || []) {
@@ -139,9 +137,8 @@ async function fetchFromNewsAPI(category?: string): Promise<RawNewsAPIArticle[]>
         seen.add(a.url);
         articles.push(a);
       }
-      if (articles.length > 0) break; // Stop once we have articles
     } catch (e: any) {
-      errors.push(e.message);
+      errors.push(`${q}: ${e.message}`);
     }
   }
 
