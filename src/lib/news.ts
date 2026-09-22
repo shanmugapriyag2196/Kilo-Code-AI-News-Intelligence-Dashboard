@@ -180,6 +180,7 @@ export async function refreshNews(): Promise<RefreshResult> {
       title,
       content,
       url,
+      imageUrl: raw.urlToImage,
       thumbnailUrl: raw.urlToImage,
       sourceName: raw.source?.name || "Unknown",
       sourceDomain: extractDomain(url),
