@@ -5,7 +5,10 @@ import {
   findArticleByURL,
   createArticle,
   getExistingTags,
-  listArticles
+  listArticles,
+  findNewsByHash,
+  findNewsByURL,
+  createNews
 } from "./airtable";
 import { NewsAPIResponse, RawNewsAPIArticle, NewsArticle, RefreshResult } from "../types";
 
@@ -141,7 +144,6 @@ async function fetchFromNewsAPI(category?: string): Promise<RawNewsAPIArticle[]>
 
 export async function refreshNews(): Promise<RefreshResult> {
   const articles = await fetchFromNewsAPI();
-  const existingTags = await getExistingTags();
   let newCount = 0;
   let updatedCount = 0;
   let duplicatesSkipped = 0;
@@ -151,20 +153,19 @@ export async function refreshNews(): Promise<RefreshResult> {
     const url = raw.url!.trim();
     const hash = hashArticle(title, url);
 
-    // duplicate detection by hash, title, and url
-    const [byHash, byTitle, byURL] = await Promise.all([
-      findArticleByHash(hash),
-      findArticleByTitle(title),
-      findArticleByURL(url)
+    // duplicate detection by hash and url (News table)
+    const [byHash, byURL] = await Promise.all([
+      findNewsByHash(hash),
+      findNewsByURL(url)
     ]);
-    const existing = byHash || byTitle || byURL;
+    const existing = byHash || byURL;
     if (existing) {
       duplicatesSkipped++;
       continue;
     }
 
     const category = guessCategory(raw);
-    // Skip non-IT/AI articles (Business, Science, Technology, etc.)
+    // Skip non-AI-tool articles
     if (!category) {
       duplicatesSkipped++;
       continue;
@@ -175,7 +176,7 @@ export async function refreshNews(): Promise<RefreshResult> {
     const summary = simpleSummary(raw.content || raw.description);
     const sentiment = guessSentiment(`${title} ${description || ""}`);
 
-    await createArticle({
+    await createNews({
       title,
       content,
       url,
@@ -195,7 +196,7 @@ export async function refreshNews(): Promise<RefreshResult> {
       duplicateGroupId: null,
       relatedArticleIds: [],
       updatedAt: new Date().toISOString()
-    }, existingTags);
+    });
     newCount++;
   }
 

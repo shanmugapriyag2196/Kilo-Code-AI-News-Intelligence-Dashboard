@@ -36,7 +36,8 @@ export default function NewsPage() {
         limit: "20",
         sort: "publishedAt",
         order: "desc",
-        dateFilter: dateFilter
+        dateFilter: dateFilter,
+        source: "news"
       });
       const res = await fetch(`/api/news?${params}`);
       const data = await res.json();

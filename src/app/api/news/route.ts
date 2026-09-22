@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { listArticles, getStats, getDistinctCategories } from "@/lib/airtable";
+import { listArticles, getStats, getDistinctCategories, listNews } from "@/lib/airtable";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
@@ -13,20 +13,24 @@ export async function GET(req: NextRequest) {
   const country = searchParams.get("country") || undefined;
   const sort = (searchParams.get("sort") as any) || "publishedAt";
   const order = (searchParams.get("order") as any) || "desc";
+  const source = searchParams.get("source") || "articles"; // articles | news
 
   try {
-    const { records, total } = await listArticles({
-      page,
-      limit,
-      category,
-      subcategory,
-      search,
-      sentiment,
-      dateFilter,
-      country,
-      sort,
-      order
-    });
+    let records: any[];
+    let total: number;
+
+    if (source === "news") {
+      const res = await listNews({ page, limit, dateFilter, sort, order });
+      records = res.records;
+      total = res.total;
+    } else {
+      const res = await listArticles({
+        page, limit, category, subcategory, search, sentiment,
+        dateFilter, country, sort, order
+      });
+      records = res.records;
+      total = res.total;
+    }
 
     // Flatten Airtable records: { id, fields: {...} } -> { id, ...fields }
     const data = records.map((r: any) => ({

@@ -14,13 +14,24 @@ export function getAirtableBase() {
       apiKey: AIRTABLE_API_KEY,
       endpointUrl: "https://api.airtable.com",
     }).base(AIRTABLE_BASE_ID),
-    tableName: process.env.AIRTABLE_TABLE_NAME || "AI_News"
+    articlesTable: process.env.AIRTABLE_ARTICLES_TABLE || "Articles",
+    newsTable: process.env.AIRTABLE_NEWS_TABLE || "News"
   };
 }
 
+export function getArticlesTable() {
+  const { base, articlesTable } = getAirtableBase();
+  return base(articlesTable);
+}
+
+export function getNewsTable() {
+  const { base, newsTable } = getAirtableBase();
+  return base(newsTable);
+}
+
+// Legacy alias for backward compat
 export function getTable() {
-  const { base, tableName } = getAirtableBase();
-  return base(tableName);
+  return getArticlesTable();
 }
 
 export async function findArticleByHash(hash: string) {
@@ -71,7 +82,7 @@ export async function getExistingTags(): Promise<string[]> {
   try {
     const { AIRTABLE_BASE_ID, AIRTABLE_API_KEY } = process.env;
     if (!AIRTABLE_BASE_ID || !AIRTABLE_API_KEY) return [];
-    const tableName = process.env.AIRTABLE_TABLE_NAME || "Articles";
+    const tableName = process.env.AIRTABLE_ARTICLES_TABLE || "Articles";
     const res = await fetch(
       `https://api.airtable.com/v0/meta/bases/${AIRTABLE_BASE_ID}/tables`,
       {
@@ -322,4 +333,101 @@ export async function getDistinctCategories() {
     if (c) cats.add(c);
   }
   return Array.from(cats).sort();
+}
+
+// ── News table functions ────────────────────────────────────────
+
+export async function findNewsByHash(hash: string) {
+  const table = getNewsTable();
+  const records = await table
+    .select({
+      filterByFormula: `{hash} = '${hash}'`,
+      maxRecords: 1
+    })
+    .all();
+  return records[0] ?? null;
+}
+
+export async function findNewsByURL(url: string) {
+  const table = getNewsTable();
+  const records = await table
+    .select({
+      filterByFormula: `{url} = '${url}'`,
+      maxRecords: 1
+    })
+    .all();
+  return records[0] ?? null;
+}
+
+export async function createNews(fields: Record<string, any>) {
+  const table = getNewsTable();
+  const clean = stripEmptyFields(fields);
+  return (await table.create([{ fields: clean }]))[0];
+}
+
+export async function listNews(options: {
+  page?: number;
+  limit?: number;
+  dateFilter?: "today" | "yesterday" | "week" | "all";
+  sort?: "publishedAt" | "fetchedAt";
+  order?: "asc" | "desc";
+}) {
+  const {
+    page = 1,
+    limit = 20,
+    dateFilter = "all",
+    sort = "publishedAt",
+    order = "desc"
+  } = options;
+
+  const table = getNewsTable();
+  const sortSpec =
+    sort === "fetchedAt"
+      ? [{ field: "fetchedAt", direction: order }]
+      : [{ field: "publishedAt", direction: order }];
+
+  const listOptions: any = {
+    sort: sortSpec,
+    pageSize: 100
+  };
+
+  let allRecords = await fetchAllRecords(table, listOptions);
+
+  // Filter by date in JavaScript (publishedAt is text, not a date field)
+  if (dateFilter && dateFilter !== "all") {
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date | null = null;
+    if (dateFilter === "today") {
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    } else if (dateFilter === "yesterday") {
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+      endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    } else if (dateFilter === "week") {
+      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    } else {
+      startDate = new Date(0);
+    }
+    const startMs = startDate!.getTime();
+    const endMs = endDate ? endDate.getTime() : Infinity;
+
+    allRecords = allRecords.filter((r: any) => {
+      const pub = r.fields?.publishedAt;
+      if (!pub) return false;
+      const pubDate = new Date(pub).getTime();
+      return !isNaN(pubDate) && pubDate >= startMs && pubDate < endMs;
+    });
+  }
+
+  const total = allRecords.length;
+  const pageOffset = (page - 1) * limit;
+  const pagedRecords = allRecords.slice(pageOffset, pageOffset + limit);
+
+  return {
+    records: pagedRecords,
+    total,
+    page,
+    limit,
+    hasMore: pageOffset + limit < total
+  };
 }
