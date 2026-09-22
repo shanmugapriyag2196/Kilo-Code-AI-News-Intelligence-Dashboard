@@ -33,6 +33,8 @@ export default function NewsPage() {
     try {
       const params = new URLSearchParams({
         limit: "10",
+        sort: "publishedAt",
+        order: "desc",
         dateFilter: dateFilter
       });
       const res = await fetch(`/api/news?${params}`);
@@ -53,12 +55,11 @@ export default function NewsPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-white">News Feed</h2>
           <p className="text-sm text-slate-400 mt-1">
-            Top AI news · {DATE_FILTERS.find(d => d.value === dateFilter)?.label}
+            Latest AI headlines · {DATE_FILTERS.find(d => d.value === dateFilter)?.label}
           </p>
         </div>
         <button
@@ -70,7 +71,6 @@ export default function NewsPage() {
         </button>
       </div>
 
-      {/* Filter bar */}
       <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-4">
         <div>
           <label className="text-xs font-medium text-slate-400 mb-2 block">Date Range</label>
@@ -112,7 +112,7 @@ export default function NewsPage() {
         </div>
       ) : (
         <ol className="space-y-3">
-          {articles.map((a, i) => {
+          {articles.slice(0, 10).map((a, i) => {
             const dateStr = new Date(a.publishedAt).toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",

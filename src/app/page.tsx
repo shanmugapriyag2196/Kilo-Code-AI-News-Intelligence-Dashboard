@@ -34,7 +34,7 @@ type Filters = {
   dateFilter: "today" | "yesterday" | "week" | "all";
 };
 
-export default function NewsPage() {
+export default function ArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [meta, setMeta] = useState<Meta | null>(null);
@@ -56,6 +56,8 @@ export default function NewsPage() {
       const params = new URLSearchParams({
         page: String(page),
         limit: "10",
+        sort: "fetchedAt",
+        order: "desc",
         ...(filters.category && { category: filters.category }),
         ...(filters.search && { search: filters.search }),
         ...(filters.sentiment && { sentiment: filters.sentiment }),
@@ -87,7 +89,8 @@ export default function NewsPage() {
         <div>
           <h2 className="text-2xl font-bold text-white">Articles</h2>
           <p className="text-sm text-slate-400 mt-1">
-            {meta ? `${meta.total} articles · Last refreshed: ${meta.lastRefreshed ? new Date(meta.lastRefreshed).toLocaleString() : "Never"}` : "Loading..."}
+            Top 10 curated AI articles ·{" "}
+            {meta ? `${meta.total} total` : "Loading..."}
           </p>
         </div>
         <RefreshButton onRefreshed={() => load(1)} />
@@ -128,7 +131,7 @@ export default function NewsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {articles.map((a) => (
+          {articles.slice(0, 10).map((a) => (
             <NewsCard key={a.id || a.url} article={a} />
           ))}
         </div>
