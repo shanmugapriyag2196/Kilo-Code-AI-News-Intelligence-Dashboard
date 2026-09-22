@@ -36,7 +36,8 @@ export async function POST(req: NextRequest) {
         AIRTABLE_API_KEY: process.env.AIRTABLE_API_KEY ? "set" : "MISSING",
         AIRTABLE_NEWS_TABLE: process.env.AIRTABLE_NEWS_TABLE || "News",
         AIRTABLE_ARTICLES_TABLE: process.env.AIRTABLE_ARTICLES_TABLE || "Articles"
-      }
+      },
+      nodeEnv: process.env.NODE_ENV
     });
   } catch (e: any) {
     return NextResponse.json({

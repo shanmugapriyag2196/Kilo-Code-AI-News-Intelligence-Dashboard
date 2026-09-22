@@ -43,13 +43,8 @@ function guessCategory(article: RawNewsAPIArticle): string | null {
 
   // Must mention a specific AI tool / product / company
   const tool = /(make\b|n8n|copilot|github copilot|microsoft copilot|chatgpt|gpt-4|gpt-5|gpt4|gpt5|openai|anthropic|claude|gemini|google gemini|deepseek|perplexity|midjourney|dall-e|stable diffusion|runway|pika|sora|kling|hugging ?face|replicate|langchain|llama|mistral|phi-|granite|command r|nvidia|intel|amd|qualcomm|apple silicon|microsoft|google|amazon|meta|aws|azure|gcp)/i;
-  if (!tool.test(hay)) return null;
-
-  // Must be a release / launch / update / version / feature announcement
-  const release = /(launch|release|update|version|introduces?|announces?|ships?|adds?|now available|new feature|new model|new version|v\d|beta|preview|roll out|rollout|unveil|reveal|debut|release date|available now|is live|goes live|goes general|general availability|ga\b)/i;
-  if (!release.test(hay)) return null;
-
-  return "Artificial Intelligence";
+  if (tool.test(hay)) return "Artificial Intelligence";
+  return null;
 }
 
 function guessSentiment(text: string | null): "positive" | "neutral" | "negative" {

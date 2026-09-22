@@ -40,7 +40,8 @@ export function RefreshButton({ onRefreshed }: { onRefreshed?: () => void }) {
       </button>
       {result && (
         <p className="text-xs text-emerald-400 mt-2">
-          News: {result.news?.new || 0} new · Articles: {result.articles?.new || 0} new
+          News: {result.news?.new || 0} new ({result.news?.fetched || 0} fetched, {result.news?.duplicatesSkipped || 0} dup) ·{" "}
+          Articles: {result.articles?.new || 0} new ({result.articles?.fetched || 0} fetched, {result.articles?.duplicatesSkipped || 0} dup)
         </p>
       )}
       {error && <p className="text-xs text-rose-400 mt-2">{error}</p>}
