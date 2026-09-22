@@ -38,10 +38,15 @@ function simpleSummary(text: string | null, max = 200): string | null {
 function guessCategory(article: RawNewsAPIArticle): string | null {
   const hay = `${article.title || ""} ${article.description || ""}`.toLowerCase();
 
-  // Only accept AI tool / AI product / AI engineering articles
-  const target = /(make\b|n8n|copilot|github copilot|microsoft copilot|prompt engineering|loop engineering|ai tool|ai workflow|automation platform|ai agent|ai automation|no-code ai|low-code ai|ai integration|ai api|ai sdk|ai framework|ai library|ai model|ai platform|ai service|ai startup|ai product|ai release|ai launch|ai update|ai version|ai feature|ai capability|openai|anthropic|google gemini|gemini|chatgpt|gpt-|gpt4|gpt-4|gpt-5|gpt5|claude|llama|mistral|deepseek|perplexity|midjourney|dall-e|stable diffusion|runway|pika|sora|kling|hugging face|replicate|langchain|lama|mistral|phi-|granite|command r|nvidia|intel|amd|qualcomm|apple silicon|microsoft|google|amazon|meta|aws|azure|gcp|cloud|saas|devops|cybersecurity|data science|analytics|machine learning|deep learning|neural network|transformer|tensor|inference|training|semiconductor|chip|gpu|hardware|software|developer|programming|api|startup|tech|technology|digital|compute)/i;
-  if (target.test(hay)) return "Artificial Intelligence";
-  return null;
+  // Must mention a specific AI tool / product / company
+  const tool = /(make\b|n8n|copilot|github copilot|microsoft copilot|chatgpt|gpt-4|gpt-5|gpt4|gpt5|openai|anthropic|claude|gemini|google gemini|deepseek|perplexity|midjourney|dall-e|stable diffusion|runway|pika|sora|kling|hugging ?face|replicate|langchain|llama|mistral|phi-|granite|command r|nvidia|intel|amd|qualcomm|apple silicon|microsoft|google|amazon|meta|aws|azure|gcp)/i;
+  if (!tool.test(hay)) return null;
+
+  // Must be a release / launch / update / version / feature announcement
+  const release = /(launch|release|update|version|introduces?|announces?|ships?|adds?|now available|new feature|new model|new version|v\d|beta|preview|roll out|rollout|unveil|reveal|debut|release date|available now|is live|goes live|goes general|general availability|ga\b)/i;
+  if (!release.test(hay)) return null;
+
+  return "Artificial Intelligence";
 }
 
 function guessSentiment(text: string | null): "positive" | "neutral" | "negative" {
@@ -109,7 +114,7 @@ async function fetchFromNewsAPI(category?: string): Promise<RawNewsAPIArticle[]>
 
   const queries = category
     ? [category]
-    : ["artificial intelligence", "machine learning", "AI technology", "LLM", "generative AI"];
+    : ["AI tool launch", "AI model release", "ChatGPT update", "Claude new version", "Gemini release", "Copilot new feature", "LLM update", "AI agent launch", "generative AI release", "OpenAI announcement", "Anthropic update", "AI software release"];
 
   const seen = new Set<string>();
   const articles: RawNewsAPIArticle[] = [];
