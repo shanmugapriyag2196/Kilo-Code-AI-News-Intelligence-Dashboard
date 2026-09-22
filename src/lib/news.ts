@@ -37,8 +37,14 @@ function simpleSummary(text: string | null, max = 200): string | null {
 
 function guessCategory(article: RawNewsAPIArticle): string | null {
   const hay = `${article.title || ""} ${article.description || ""}`.toLowerCase();
-  // Broad AI/tech keywords — articles from NewsAPI AI queries are relevant
-  if (/(ai|artificial|machine learning|deep learning|neural|llm|generative|gpt|openai|anthropic|gemini|copilot|chatbot|automation|robot|software|developer|programming|api|saas|cloud|devops|cybersecurity|data science|analytics|algorithm|model|inference|training|tensor|transformer|diffusion|stable diffusion|midjourney|dall-e|voice|speech|nlp|computer vision|semiconductor|chip|gpu|hardware|startup|tech|technology|digital|compute|intel|nvidia|amd|qualcomm|meta|google|apple|microsoft|amazon)/i.test(hay)) return "Artificial Intelligence";
+
+  // Reject obvious non-AI/tech topics
+  const nonTarget = /(healthcare|medical|drug|hospital|patient|clinic|disease|cancer|vaccine|surgery|pharma|biotech|fitness|wellness|nutrition|diet|exercise|sports|football|basketball|soccer|baseball|tennis|cricket|golf|hockey|nba|mlb|fifa|olympics|athlete|stadium|player|coach|tournament|entertainment|movie|film|celebrity|music|album|concert|fashion|luxury|travel|tourism|hotel|restaurant|food|recipe|cooking|cuisine|real estate|property|house|apartment|mortgage|insurance|banking|finance|investment|stock market|trading|economy|economics|inflation|recession|unemployment|wage|salary|tax|budget|government|politics|election|senator|congress|president|vote|law|policy|regulation|military|war|weapon|defense|conflict|missile|bomb|attack|terrorist|disaster|storm|flood|earthquake|fire|wildfire|hurricane|weather|climate|temperature|rain|snow|wind|energy|oil|gas|coal|solar|wind farm|nuclear power|electricity|grid|utility|agriculture|farm|crop|livestock|fishing|mining|forestry|logging)/i;
+  if (nonTarget.test(hay)) return null;
+
+  // Must contain AI/tech keywords
+  const target = /(ai|artificial intelligence|machine learning|deep learning|neural network|llm|generative ai|gpt|openai|anthropic|gemini|copilot|chatbot|automation|robot|software|developer|programming|api|saas|cloud|devops|cybersecurity|data science|analytics|algorithm|model|inference|training|tensor|transformer|diffusion|stable diffusion|midjourney|dall-e|voice|speech|nlp|computer vision|semiconductor|chip|gpu|hardware|startup|tech|technology|digital|compute|intel|nvidia|amd|qualcomm|meta|google|apple|microsoft|amazon)/i;
+  if (target.test(hay)) return "Artificial Intelligence";
   return null;
 }
 
