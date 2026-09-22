@@ -24,7 +24,7 @@ const DATE_FILTERS = [
 
 export default function NewsPage() {
   const [articles, setArticles] = useState<Article[]>([]);
-  const [dateFilter, setDateFilter] = useState("today");
+  const [dateFilter, setDateFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
