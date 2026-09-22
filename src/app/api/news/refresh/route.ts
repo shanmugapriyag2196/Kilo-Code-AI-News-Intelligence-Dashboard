@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { refreshNews } from "@/lib/news";
+import { refreshNews, refreshArticles } from "@/lib/news";
 import { getStats } from "@/lib/airtable";
 
 export async function GET(req: NextRequest) {
   try {
-    const result = await refreshNews();
+    const newsResult = await refreshNews();
+    const articlesResult = await refreshArticles();
     const stats = await getStats();
-    return NextResponse.json({ success: true, data: result, stats });
+    return NextResponse.json({
+      success: true,
+      data: { news: newsResult, articles: articlesResult },
+      stats
+    });
   } catch (e: any) {
     return NextResponse.json({
       success: false,
@@ -18,17 +23,19 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const result = await refreshNews();
+    const newsResult = await refreshNews();
+    const articlesResult = await refreshArticles();
     const stats = await getStats();
     return NextResponse.json({
       success: true,
-      data: result,
+      data: { news: newsResult, articles: articlesResult },
       stats,
       env: {
         NEWSAPI_KEY: process.env.NEWSAPI_KEY ? "set" : "MISSING",
         AIRTABLE_BASE_ID: process.env.AIRTABLE_BASE_ID ? "set" : "MISSING",
         AIRTABLE_API_KEY: process.env.AIRTABLE_API_KEY ? "set" : "MISSING",
-        AIRTABLE_NEWS_TABLE: process.env.AIRTABLE_NEWS_TABLE || "News"
+        AIRTABLE_NEWS_TABLE: process.env.AIRTABLE_NEWS_TABLE || "News",
+        AIRTABLE_ARTICLES_TABLE: process.env.AIRTABLE_ARTICLES_TABLE || "Articles"
       }
     });
   } catch (e: any) {
@@ -40,7 +47,8 @@ export async function POST(req: NextRequest) {
         NEWSAPI_KEY: process.env.NEWSAPI_KEY ? "set" : "MISSING",
         AIRTABLE_BASE_ID: process.env.AIRTABLE_BASE_ID ? "set" : "MISSING",
         AIRTABLE_API_KEY: process.env.AIRTABLE_API_KEY ? "set" : "MISSING",
-        AIRTABLE_NEWS_TABLE: process.env.AIRTABLE_NEWS_TABLE || "News"
+        AIRTABLE_NEWS_TABLE: process.env.AIRTABLE_NEWS_TABLE || "News",
+        AIRTABLE_ARTICLES_TABLE: process.env.AIRTABLE_ARTICLES_TABLE || "Articles"
       }
     }, { status: 500 });
   }

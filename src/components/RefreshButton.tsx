@@ -6,10 +6,12 @@ import { RefreshCw } from "lucide-react";
 export function RefreshButton({ onRefreshed }: { onRefreshed?: () => void }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<any>(null);
 
   async function refresh() {
     setLoading(true);
     setError(null);
+    setResult(null);
     try {
       const res = await fetch("/api/news/refresh", { method: "POST" });
       const data = await res.json();
@@ -17,6 +19,7 @@ export function RefreshButton({ onRefreshed }: { onRefreshed?: () => void }) {
         setError(data.error || "Refresh failed");
         return;
       }
+      setResult(data.data);
       onRefreshed?.();
     } catch (e: any) {
       setError(e.message || "Network error");
@@ -35,6 +38,11 @@ export function RefreshButton({ onRefreshed }: { onRefreshed?: () => void }) {
         <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
         {loading ? "Refreshing..." : "Refresh News"}
       </button>
+      {result && (
+        <p className="text-xs text-emerald-400 mt-2">
+          News: {result.news?.new || 0} new · Articles: {result.articles?.new || 0} new
+        </p>
+      )}
       {error && <p className="text-xs text-rose-400 mt-2">{error}</p>}
     </div>
   );
