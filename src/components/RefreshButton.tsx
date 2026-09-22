@@ -39,10 +39,18 @@ export function RefreshButton({ onRefreshed }: { onRefreshed?: () => void }) {
         {loading ? "Refreshing..." : "Refresh News"}
       </button>
       {result && (
-        <p className="text-xs text-emerald-400 mt-2">
-          News: {result.news?.new || 0} new ({result.news?.fetched || 0} fetched, {result.news?.duplicatesSkipped || 0} dup) ·{" "}
-          Articles: {result.articles?.new || 0} new ({result.articles?.fetched || 0} fetched, {result.articles?.duplicatesSkipped || 0} dup)
-        </p>
+        <div className="text-xs text-emerald-400 mt-2 space-y-1">
+          <p>
+            News: {result.news?.new || 0} new ({result.news?.fetched || 0} fetched, {result.news?.duplicatesSkipped || 0} dup) ·{" "}
+            Articles: {result.articles?.new || 0} new ({result.articles?.fetched || 0} fetched, {result.articles?.duplicatesSkipped || 0} dup)
+          </p>
+          {result.news?.errors && result.news.errors.length > 0 && (
+            <p className="text-rose-400">News errors: {result.news.errors.slice(0, 3).join("; ")}</p>
+          )}
+          {result.articles?.errors && result.articles.errors.length > 0 && (
+            <p className="text-rose-400">Articles errors: {result.articles.errors.slice(0, 3).join("; ")}</p>
+          )}
+        </div>
       )}
       {error && <p className="text-xs text-rose-400 mt-2">{error}</p>}
     </div>

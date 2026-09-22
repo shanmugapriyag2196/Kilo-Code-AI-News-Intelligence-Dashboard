@@ -110,30 +110,35 @@ function guessSubcategory(article: RawNewsAPIArticle, category: string | null): 
 async function fetchFromNewsAPI(category?: string): Promise<RawNewsAPIArticle[]> {
   if (!NEWSAPI_KEY) throw new Error("NEWSAPI_KEY not configured");
 
-  const queries = category
-    ? [category]
-    : ["AI tool launch", "AI model release", "ChatGPT update", "Claude new version", "Gemini release", "Copilot new feature", "LLM update", "AI agent launch", "generative AI release", "OpenAI announcement", "Anthropic update", "AI software release"];
-
   const seen = new Set<string>();
   const articles: RawNewsAPIArticle[] = [];
+  const errors: string[] = [];
 
-  for (const q of queries) {
-    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(q)}&language=en&sortBy=publishedAt&pageSize=40&apiKey=${NEWSAPI_KEY}`;
-    try {
-      const res = await fetch(url, { next: { revalidate: 0 } });
-      if (!res.ok) continue;
+  // Use top-headlines (free-tier compatible)
+  const url = `https://newsapi.org/v2/top-headlines?category=technology&language=en&pageSize=40&apiKey=${NEWSAPI_KEY}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      const txt = await res.text();
+      errors.push(`HTTP ${res.status}: ${txt.slice(0, 200)}`);
+    } else {
       const data: NewsAPIResponse = await res.json();
-      for (const a of data.articles || []) {
-        if (!a.url || !a.title) continue;
-        if (seen.has(a.url)) continue;
-        seen.add(a.url);
-        articles.push(a);
+      if (data.status === "error") {
+        errors.push(data.message || "Unknown NewsAPI error");
+      } else {
+        for (const a of data.articles || []) {
+          if (!a.url || !a.title) continue;
+          if (seen.has(a.url)) continue;
+          seen.add(a.url);
+          articles.push(a);
+        }
       }
-    } catch {
-      // ignore individual query failures
     }
+  } catch (e: any) {
+    errors.push(e.message);
   }
 
+  console.log("fetchFromNewsAPI", { fetched: articles.length, errors });
   return articles.slice(0, 20);
 }
 
@@ -142,13 +147,13 @@ export async function refreshNews(): Promise<RefreshResult> {
   let newCount = 0;
   let updatedCount = 0;
   let duplicatesSkipped = 0;
+  const errors: string[] = [];
 
   for (const raw of articles) {
     const title = raw.title!.trim();
     const url = raw.url!.trim();
     const hash = hashArticle(title, url);
 
-    // duplicate detection by hash and url (News table)
     const [byHash, byURL] = await Promise.all([
       findNewsByHash(hash),
       findNewsByURL(url)
@@ -160,7 +165,6 @@ export async function refreshNews(): Promise<RefreshResult> {
     }
 
     const category = guessCategory(raw);
-    // Skip non-AI-tool articles
     if (!category) {
       duplicatesSkipped++;
       continue;
@@ -171,29 +175,33 @@ export async function refreshNews(): Promise<RefreshResult> {
     const summary = simpleSummary(raw.content || raw.description);
     const sentiment = guessSentiment(`${title} ${description || ""}`);
 
-    await createNews({
-      title,
-      content,
-      url,
-      imageUrl: raw.urlToImage,
-      thumbnailUrl: raw.urlToImage,
-      sourceName: raw.source?.name || "Unknown",
-      sourceDomain: extractDomain(url),
-      author: raw.author,
-      publishedAt: raw.publishedAt || new Date().toISOString(),
-      fetchedAt: new Date().toISOString(),
-      category,
-      subcategory: guessSubcategory(raw, category),
-      summary,
-      sentiment,
-      hash,
-      language: "en",
-      trendingScore: "0",
-      duplicateGroupId: null,
-      relatedArticleIds: [],
-      updatedAt: new Date().toISOString()
-    });
-    newCount++;
+    try {
+      await createNews({
+        title,
+        content,
+        url,
+        imageUrl: raw.urlToImage,
+        thumbnailUrl: raw.urlToImage,
+        sourceName: raw.source?.name || "Unknown",
+        sourceDomain: extractDomain(url),
+        author: raw.author,
+        publishedAt: raw.publishedAt || new Date().toISOString(),
+        fetchedAt: new Date().toISOString(),
+        category,
+        subcategory: guessSubcategory(raw, category),
+        summary,
+        sentiment,
+        hash,
+        language: "en",
+        trendingScore: "0",
+        duplicateGroupId: null,
+        relatedArticleIds: [],
+        updatedAt: new Date().toISOString()
+      });
+      newCount++;
+    } catch (e: any) {
+      errors.push(`${title}: ${e.message}`);
+    }
   }
 
   return {
@@ -201,7 +209,8 @@ export async function refreshNews(): Promise<RefreshResult> {
     new: newCount,
     updated: updatedCount,
     duplicatesSkipped,
-    lastRefreshed: new Date().toISOString()
+    lastRefreshed: new Date().toISOString(),
+    errors: errors.length ? errors : undefined
   };
 }
 
@@ -211,6 +220,7 @@ export async function refreshArticles(): Promise<RefreshResult> {
   let newCount = 0;
   let updatedCount = 0;
   let duplicatesSkipped = 0;
+  const errors: string[] = [];
 
   for (const raw of articles) {
     const title = raw.title!.trim();
@@ -239,29 +249,33 @@ export async function refreshArticles(): Promise<RefreshResult> {
     const summary = simpleSummary(raw.content || raw.description);
     const sentiment = guessSentiment(`${title} ${description || ""}`);
 
-    await createArticle({
-      title,
-      content,
-      url,
-      imageUrl: raw.urlToImage,
-      thumbnailUrl: raw.urlToImage,
-      sourceName: raw.source?.name || "Unknown",
-      sourceDomain: extractDomain(url),
-      author: raw.author,
-      publishedAt: raw.publishedAt || new Date().toISOString(),
-      fetchedAt: new Date().toISOString(),
-      category,
-      subcategory: guessSubcategory(raw, category),
-      summary,
-      sentiment,
-      hash,
-      language: "en",
-      trendingScore: "0",
-      duplicateGroupId: null,
-      relatedArticleIds: [],
-      updatedAt: new Date().toISOString()
-    }, existingTags);
-    newCount++;
+    try {
+      await createArticle({
+        title,
+        content,
+        url,
+        imageUrl: raw.urlToImage,
+        thumbnailUrl: raw.urlToImage,
+        sourceName: raw.source?.name || "Unknown",
+        sourceDomain: extractDomain(url),
+        author: raw.author,
+        publishedAt: raw.publishedAt || new Date().toISOString(),
+        fetchedAt: new Date().toISOString(),
+        category,
+        subcategory: guessSubcategory(raw, category),
+        summary,
+        sentiment,
+        hash,
+        language: "en",
+        trendingScore: "0",
+        duplicateGroupId: null,
+        relatedArticleIds: [],
+        updatedAt: new Date().toISOString()
+      }, existingTags);
+      newCount++;
+    } catch (e: any) {
+      errors.push(`${title}: ${e.message}`);
+    }
   }
 
   return {
@@ -269,23 +283,22 @@ export async function refreshArticles(): Promise<RefreshResult> {
     new: newCount,
     updated: updatedCount,
     duplicatesSkipped,
-    lastRefreshed: new Date().toISOString()
+    lastRefreshed: new Date().toISOString(),
+    errors: errors.length ? errors : undefined
   };
 }
 
 async function fetchArticlesFromNewsAPI(): Promise<RawNewsAPIArticle[]> {
   if (!NEWSAPI_KEY) throw new Error("NEWSAPI_KEY not configured");
 
-  const queries = ["artificial intelligence", "machine learning", "AI technology", "LLM", "generative AI"];
-
   const seen = new Set<string>();
   const articles: RawNewsAPIArticle[] = [];
 
-  for (const q of queries) {
-    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(q)}&language=en&sortBy=publishedAt&pageSize=40&apiKey=${NEWSAPI_KEY}`;
-    try {
-      const res = await fetch(url, { next: { revalidate: 0 } });
-      if (!res.ok) continue;
+  // Use top-headlines (free-tier compatible)
+  const url = `https://newsapi.org/v2/top-headlines?category=technology&language=en&pageSize=40&apiKey=${NEWSAPI_KEY}`;
+  try {
+    const res = await fetch(url);
+    if (res.ok) {
       const data: NewsAPIResponse = await res.json();
       for (const a of data.articles || []) {
         if (!a.url || !a.title) continue;
@@ -293,9 +306,9 @@ async function fetchArticlesFromNewsAPI(): Promise<RawNewsAPIArticle[]> {
         seen.add(a.url);
         articles.push(a);
       }
-    } catch {
-      // ignore individual query failures
     }
+  } catch {
+    // ignore
   }
 
   return articles.slice(0, 20);

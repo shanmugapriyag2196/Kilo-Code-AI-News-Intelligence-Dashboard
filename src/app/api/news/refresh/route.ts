@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: false,
       error: e.message,
-      details: process.env.NODE_ENV === "development" ? e.stack : undefined,
+      stack: process.env.NODE_ENV === "development" ? e.stack : undefined,
       env: {
         NEWSAPI_KEY: process.env.NEWSAPI_KEY ? "set" : "MISSING",
         AIRTABLE_BASE_ID: process.env.AIRTABLE_BASE_ID ? "set" : "MISSING",

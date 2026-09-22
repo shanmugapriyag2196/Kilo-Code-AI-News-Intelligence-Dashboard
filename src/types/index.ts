@@ -23,6 +23,8 @@ export interface NewsAPIResponse {
   status: string;
   totalResults: number;
   articles: RawNewsAPIArticle[];
+  code?: string;
+  message?: string;
 }
 
 export interface RawNewsAPIArticle {
@@ -54,4 +56,5 @@ export interface RefreshResult {
   updated: number;
   duplicatesSkipped: number;
   lastRefreshed: string;
+  errors?: string[];
 }
