@@ -3,15 +3,6 @@ import { refreshNews } from "@/lib/news";
 import { getStats } from "@/lib/airtable";
 
 export async function GET(req: NextRequest) {
-  // Protect cron endpoint with optional secret
-  const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const auth = req.nextUrl.searchParams.get("secret");
-    if (auth !== secret) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-    }
-  }
-
   try {
     const result = await refreshNews();
     const stats = await getStats();
