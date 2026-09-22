@@ -41,8 +41,8 @@ function simpleSummary(text: string | null, max = 200): string | null {
 function guessCategory(article: RawNewsAPIArticle): string | null {
   const hay = `${article.title || ""} ${article.description || ""}`.toLowerCase();
 
-  // Must mention a specific AI tool / product / company
-  const tool = /(make\b|n8n|copilot|github copilot|microsoft copilot|chatgpt|gpt-4|gpt-5|gpt4|gpt5|openai|anthropic|claude|gemini|google gemini|deepseek|perplexity|midjourney|dall-e|stable diffusion|runway|pika|sora|kling|hugging ?face|replicate|langchain|llama|mistral|phi-|granite|command r|nvidia|intel|amd|qualcomm|apple silicon|microsoft|google|amazon|meta|aws|azure|gcp)/i;
+  // Accept any technology article from NewsAPI top-headlines
+  const tool = /(make\b|n8n|copilot|github copilot|microsoft copilot|chatgpt|gpt-4|gpt-5|gpt4|gpt5|openai|anthropic|claude|gemini|google gemini|deepseek|perplexity|midjourney|dall-e|stable diffusion|runway|pika|sora|kling|hugging ?face|replicate|langchain|llama|mistral|phi-|granite|command r|nvidia|intel|amd|qualcomm|apple silicon|microsoft|google|amazon|meta|aws|azure|gcp|ai\b|artificial intelligence|machine learning|deep learning|neural network|llm|generative|automation|robot|software|developer|programming|api|saas|cloud|devops|cybersecurity|data science|analytics|algorithm|model|inference|training|tensor|transformer|diffusion|voice|speech|nlp|computer vision|semiconductor|chip|gpu|hardware|startup|tech|technology|digital|compute)/i;
   if (tool.test(hay)) return "Artificial Intelligence";
   return null;
 }
@@ -114,28 +114,35 @@ async function fetchFromNewsAPI(category?: string): Promise<RawNewsAPIArticle[]>
   const articles: RawNewsAPIArticle[] = [];
   const errors: string[] = [];
 
-  // Use top-headlines (free-tier compatible)
-  const url = `https://newsapi.org/v2/top-headlines?category=technology&language=en&pageSize=40&apiKey=${NEWSAPI_KEY}`;
-  try {
-    const res = await fetch(url);
-    if (!res.ok) {
-      const txt = await res.text();
-      errors.push(`HTTP ${res.status}: ${txt.slice(0, 200)}`);
-    } else {
+  // Try top-headlines first (free-tier compatible)
+  const endpoints = [
+    `https://newsapi.org/v2/top-headlines?category=technology&language=en&pageSize=40&apiKey=${NEWSAPI_KEY}`,
+    `https://newsapi.org/v2/everything?q=artificial+intelligence&language=en&sortBy=publishedAt&pageSize=40&apiKey=${NEWSAPI_KEY}`
+  ];
+
+  for (const url of endpoints) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) {
+        const txt = await res.text();
+        errors.push(`HTTP ${res.status}: ${txt.slice(0, 300)}`);
+        continue;
+      }
       const data: NewsAPIResponse = await res.json();
       if (data.status === "error") {
         errors.push(data.message || "Unknown NewsAPI error");
-      } else {
-        for (const a of data.articles || []) {
-          if (!a.url || !a.title) continue;
-          if (seen.has(a.url)) continue;
-          seen.add(a.url);
-          articles.push(a);
-        }
+        continue;
       }
+      for (const a of data.articles || []) {
+        if (!a.url || !a.title) continue;
+        if (seen.has(a.url)) continue;
+        seen.add(a.url);
+        articles.push(a);
+      }
+      if (articles.length > 0) break; // Stop once we have articles
+    } catch (e: any) {
+      errors.push(e.message);
     }
-  } catch (e: any) {
-    errors.push(e.message);
   }
 
   console.log("fetchFromNewsAPI", { fetched: articles.length, errors });
