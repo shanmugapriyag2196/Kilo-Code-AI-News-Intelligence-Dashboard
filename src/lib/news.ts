@@ -38,12 +38,8 @@ function simpleSummary(text: string | null, max = 200): string | null {
 function guessCategory(article: RawNewsAPIArticle): string | null {
   const hay = `${article.title || ""} ${article.description || ""}`.toLowerCase();
 
-  // Reject obvious non-AI/tech topics
-  const nonTarget = /(healthcare|medical|drug|hospital|patient|clinic|disease|cancer|vaccine|surgery|pharma|biotech|fitness|wellness|nutrition|diet|exercise|sports|football|basketball|soccer|baseball|tennis|cricket|golf|hockey|nba|mlb|fifa|olympics|athlete|stadium|player|coach|tournament|entertainment|movie|film|celebrity|music|album|concert|fashion|luxury|travel|tourism|hotel|restaurant|food|recipe|cooking|cuisine|real estate|property|house|apartment|mortgage|insurance|banking|finance|investment|stock market|trading|economy|economics|inflation|recession|unemployment|wage|salary|tax|budget|government|politics|election|senator|congress|president|vote|law|policy|regulation|military|war|weapon|defense|conflict|missile|bomb|attack|terrorist|disaster|storm|flood|earthquake|fire|wildfire|hurricane|weather|climate|temperature|rain|snow|wind|energy|oil|gas|coal|solar|wind farm|nuclear power|electricity|grid|utility|agriculture|farm|crop|livestock|fishing|mining|forestry|logging)/i;
-  if (nonTarget.test(hay)) return null;
-
-  // Must contain AI/tech keywords
-  const target = /(ai|artificial intelligence|machine learning|deep learning|neural network|llm|generative ai|gpt|openai|anthropic|gemini|copilot|chatbot|automation|robot|software|developer|programming|api|saas|cloud|devops|cybersecurity|data science|analytics|algorithm|model|inference|training|tensor|transformer|diffusion|stable diffusion|midjourney|dall-e|voice|speech|nlp|computer vision|semiconductor|chip|gpu|hardware|startup|tech|technology|digital|compute|intel|nvidia|amd|qualcomm|meta|google|apple|microsoft|amazon)/i;
+  // Only accept AI tool / AI product / AI engineering articles
+  const target = /(make\b|n8n|copilot|github copilot|microsoft copilot|prompt engineering|loop engineering|ai tool|ai workflow|automation platform|ai agent|ai automation|no-code ai|low-code ai|ai integration|ai api|ai sdk|ai framework|ai library|ai model|ai platform|ai service|ai startup|ai product|ai release|ai launch|ai update|ai version|ai feature|ai capability|openai|anthropic|google gemini|gemini|chatgpt|gpt-|gpt4|gpt-4|gpt-5|gpt5|claude|llama|mistral|deepseek|perplexity|midjourney|dall-e|stable diffusion|runway|pika|sora|kling|hugging face|replicate|langchain|lama|mistral|phi-|granite|command r|nvidia|intel|amd|qualcomm|apple silicon|microsoft|google|amazon|meta|aws|azure|gcp|cloud|saas|devops|cybersecurity|data science|analytics|machine learning|deep learning|neural network|transformer|tensor|inference|training|semiconductor|chip|gpu|hardware|software|developer|programming|api|startup|tech|technology|digital|compute)/i;
   if (target.test(hay)) return "Artificial Intelligence";
   return null;
 }
@@ -173,7 +169,6 @@ export async function refreshNews(): Promise<RefreshResult> {
     const content = truncate(raw.content, 800);
     const summary = simpleSummary(raw.content || raw.description);
     const sentiment = guessSentiment(`${title} ${description || ""}`);
-    const tags = guessTags(raw);
 
     await createArticle({
       title,
@@ -189,7 +184,6 @@ export async function refreshNews(): Promise<RefreshResult> {
       subcategory: guessSubcategory(raw, category),
       summary,
       sentiment,
-      tags,
       hash,
       language: "en",
       trendingScore: "0",
