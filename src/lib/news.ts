@@ -119,32 +119,28 @@ async function fetchFromNewsAPI(category?: string): Promise<RawNewsAPIArticle[]>
   const articles: RawNewsAPIArticle[] = [];
   const errors: string[] = [];
 
-  // Use /everything (worked in first trial)
-  const queries = ["artificial intelligence", "machine learning", "AI technology", "LLM", "generative AI"];
-
-  for (const q of queries) {
-    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(q)}&language=en&sortBy=publishedAt&pageSize=40&apiKey=${NEWSAPI_KEY}`;
-    try {
-      const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) {
-        const txt = await res.text();
-        errors.push(`${q}: HTTP ${res.status} ${txt.slice(0, 200)}`);
-        continue;
-      }
+  // Single query to avoid rate limiting (free tier: 100 req/24h)
+  const url = `https://newsapi.org/v2/top-headlines?category=technology&language=en&pageSize=50&apiKey=${NEWSAPI_KEY}`;
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) {
+      const txt = await res.text();
+      errors.push(`HTTP ${res.status}: ${txt.slice(0, 300)}`);
+    } else {
       const data: NewsAPIResponse = await res.json();
       if (data.status === "error") {
-        errors.push(`${q}: ${data.message}`);
-        continue;
+        errors.push(data.message || "Unknown NewsAPI error");
+      } else {
+        for (const a of data.articles || []) {
+          if (!a.url || !a.title) continue;
+          if (seen.has(a.url)) continue;
+          seen.add(a.url);
+          articles.push(a);
+        }
       }
-      for (const a of data.articles || []) {
-        if (!a.url || !a.title) continue;
-        if (seen.has(a.url)) continue;
-        seen.add(a.url);
-        articles.push(a);
-      }
-    } catch (e: any) {
-      errors.push(`${q}: ${e.message}`);
     }
+  } catch (e: any) {
+    errors.push(e.message);
   }
 
   console.log("fetchFromNewsAPI", { fetched: articles.length, errors });
@@ -303,14 +299,11 @@ async function fetchArticlesFromNewsAPI(): Promise<RawNewsAPIArticle[]> {
   const seen = new Set<string>();
   const articles: RawNewsAPIArticle[] = [];
 
-  // Use /everything (worked in first trial)
-  const queries = ["artificial intelligence", "machine learning", "AI technology", "LLM", "generative AI"];
-
-  for (const q of queries) {
-    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(q)}&language=en&sortBy=publishedAt&pageSize=40&apiKey=${NEWSAPI_KEY}`;
-    try {
-      const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) continue;
+  // Single query to avoid rate limiting
+  const url = `https://newsapi.org/v2/top-headlines?category=technology&language=en&pageSize=50&apiKey=${NEWSAPI_KEY}`;
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    if (res.ok) {
       const data: NewsAPIResponse = await res.json();
       for (const a of data.articles || []) {
         if (!a.url || !a.title) continue;
@@ -318,9 +311,9 @@ async function fetchArticlesFromNewsAPI(): Promise<RawNewsAPIArticle[]> {
         seen.add(a.url);
         articles.push(a);
       }
-    } catch {
-      // ignore individual query failures
     }
+  } catch {
+    // ignore
   }
 
   return articles.slice(0, 20);
