@@ -198,16 +198,6 @@ export async function listArticles(options: {
     conditions.push(`{subcategory} = '${escaped}'`);
   }
 
-  if (country) {
-    const escapedCountry = country.replace(/'/g, "\\'");
-    conditions.push(`OR(CONTAINS({sourceName}, '${escapedCountry}'), CONTAINS({sourceDomain}, '${escapedCountry}'))`);
-  }
-
-  if (search) {
-    const escaped = search.replace(/'/g, "\\'");
-    conditions.push(`OR(CONTAINS({title}, '${escaped}'), CONTAINS({summary}, '${escaped}'), CONTAINS({content}, '${escaped}'))`);
-  }
-
   const filterByFormula = conditions.length === 0
     ? undefined
     : conditions.length === 1
@@ -227,6 +217,25 @@ export async function listArticles(options: {
 
   // Fetch all records using pagination (Airtable max page size is 100)
   let allRecords = await fetchAllRecords(table, listOptions);
+
+  // Filter by search, country, and date in JavaScript
+  const searchLower = search ? search.toLowerCase() : null;
+  const countryLower = country ? country.toLowerCase() : null;
+
+  if (searchLower || countryLower) {
+    allRecords = allRecords.filter((r: any) => {
+      const f = r.fields || {};
+      if (searchLower) {
+        const hay = `${f.title || ""} ${f.summary || ""} ${f.content || ""}`.toLowerCase();
+        if (!hay.includes(searchLower)) return false;
+      }
+      if (countryLower) {
+        const hay = `${f.sourceName || ""} ${f.sourceDomain || ""}`.toLowerCase();
+        if (!hay.includes(countryLower)) return false;
+      }
+      return true;
+    });
+  }
 
   // Filter by date in JavaScript (publishedAt is text, not a date field)
   if (dateFilter && dateFilter !== "all") {
