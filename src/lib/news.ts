@@ -12,7 +12,12 @@ import {
 } from "./airtable";
 import { NewsAPIResponse, RawNewsAPIArticle, NewsArticle, RefreshResult } from "../types";
 
-const NEWSAPI_KEY = process.env.NEWSAPI_KEY;
+function getNewsAPIKey(): string {
+  const key = process.env.NEWSAPI_KEY;
+  if (!key) throw new Error("NEWSAPI_KEY not configured");
+  return key;
+}
+
 const CATEGORIES = ["Artificial Intelligence", "Technology", "Science", "Business"];
 
 function normalizeTitle(t: string): string {
@@ -108,7 +113,7 @@ function guessSubcategory(article: RawNewsAPIArticle, category: string | null): 
 }
 
 async function fetchFromNewsAPI(category?: string): Promise<RawNewsAPIArticle[]> {
-  if (!NEWSAPI_KEY) throw new Error("NEWSAPI_KEY not configured");
+  const NEWSAPI_KEY = getNewsAPIKey();
 
   const seen = new Set<string>();
   const articles: RawNewsAPIArticle[] = [];
@@ -120,7 +125,7 @@ async function fetchFromNewsAPI(category?: string): Promise<RawNewsAPIArticle[]>
   for (const q of queries) {
     const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(q)}&language=en&sortBy=publishedAt&pageSize=40&apiKey=${NEWSAPI_KEY}`;
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, { cache: "no-store" });
       if (!res.ok) {
         const txt = await res.text();
         errors.push(`${q}: HTTP ${res.status} ${txt.slice(0, 200)}`);
@@ -293,16 +298,19 @@ export async function refreshArticles(): Promise<RefreshResult> {
 }
 
 async function fetchArticlesFromNewsAPI(): Promise<RawNewsAPIArticle[]> {
-  if (!NEWSAPI_KEY) throw new Error("NEWSAPI_KEY not configured");
+  const NEWSAPI_KEY = getNewsAPIKey();
 
   const seen = new Set<string>();
   const articles: RawNewsAPIArticle[] = [];
 
-  // Use top-headlines (free-tier compatible)
-  const url = `https://newsapi.org/v2/top-headlines?category=technology&language=en&pageSize=40&apiKey=${NEWSAPI_KEY}`;
-  try {
-    const res = await fetch(url);
-    if (res.ok) {
+  // Use /everything (worked in first trial)
+  const queries = ["artificial intelligence", "machine learning", "AI technology", "LLM", "generative AI"];
+
+  for (const q of queries) {
+    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(q)}&language=en&sortBy=publishedAt&pageSize=40&apiKey=${NEWSAPI_KEY}`;
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) continue;
       const data: NewsAPIResponse = await res.json();
       for (const a of data.articles || []) {
         if (!a.url || !a.title) continue;
@@ -310,9 +318,9 @@ async function fetchArticlesFromNewsAPI(): Promise<RawNewsAPIArticle[]> {
         seen.add(a.url);
         articles.push(a);
       }
+    } catch {
+      // ignore individual query failures
     }
-  } catch {
-    // ignore
   }
 
   return articles.slice(0, 20);
