@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Globe, RefreshCw, Calendar } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 interface Article {
   id?: string;
@@ -14,31 +14,10 @@ interface Article {
   sentiment: "positive" | "neutral" | "negative";
 }
 
-const AI_TOOLS = [
-  { label: "OpenAI", value: "OpenAI" },
-  { label: "ChatGPT", value: "ChatGPT" },
-  { label: "Anthropic", value: "Anthropic" },
-  { label: "Claude", value: "Claude" },
-  { label: "Google Gemini", value: "Gemini" },
-  { label: "Kimi K3", value: "Kimi" },
-  { label: "DeepMind", value: "DeepMind" },
-  { label: "AI Agents", value: "Agentic" }
-];
-
 const COUNTRIES = [
   { label: "All Countries", value: "" },
   { label: "India", value: "India" },
   { label: "United States", value: "US" }
-];
-
-const TOPICS = [
-  { label: "All Topics", value: "" },
-  { label: "IT & Software", value: "software" },
-  { label: "AI Tools", value: "Artificial Intelligence" },
-  { label: "DevOps", value: "DevOps" },
-  { label: "Cybersecurity", value: "Cybersecurity" },
-  { label: "Cloud", value: "Cloud" },
-  { label: "Data Science", value: "Data Science" }
 ];
 
 const DATE_FILTERS = [
@@ -51,8 +30,6 @@ const DATE_FILTERS = [
 export default function NewsPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [country, setCountry] = useState("");
-  const [topic, setTopic] = useState("");
-  const [aiTool, setAiTool] = useState("");
   const [dateFilter, setDateFilter] = useState("today");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,24 +38,11 @@ export default function NewsPage() {
     setLoading(true);
     setError(null);
     try {
-      // Show 5 items when topic or AI tool filter is active, 10 otherwise
-      const hasFilter = topic || aiTool;
-      const limit = hasFilter ? "5" : "10";
       const params = new URLSearchParams({
-        limit: limit,
+        limit: "10",
         dateFilter: dateFilter
       });
       if (country) params.set("country", country);
-      // Topic filtering: AI Tools uses category, others use subcategory
-      if (topic === "Artificial Intelligence") {
-        params.set("category", topic);
-      } else if (topic === "software") {
-        params.set("search", "software");
-      } else if (topic) {
-        params.set("subcategory", topic);
-      }
-      // AI tool filtering
-      if (aiTool) params.set("search", aiTool);
       const res = await fetch(`/api/news?${params}`);
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -93,7 +57,7 @@ export default function NewsPage() {
     }
   }
 
-  useEffect(() => { load(); }, [country, aiTool, topic, dateFilter]);
+  useEffect(() => { load(); }, [country, dateFilter]);
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -147,42 +111,6 @@ export default function NewsPage() {
                 }`}
               >
                 {c.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Topic */}
-        <div>
-          <label className="text-xs font-medium text-slate-400 mb-2 block">Topic</label>
-          <div className="flex flex-wrap gap-2">
-            {TOPICS.map((t) => (
-              <button
-                key={t.value}
-                onClick={() => setTopic(t.value)}
-                className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-                  topic === t.value ? "bg-brand-600 border-brand-500 text-white" : "bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* AI Tool */}
-        <div>
-          <label className="text-xs font-medium text-slate-400 mb-2 block">AI Tool / Company</label>
-          <div className="flex flex-wrap gap-2">
-            {AI_TOOLS.map((t) => (
-              <button
-                key={t.value}
-                onClick={() => setAiTool(t.value)}
-                className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-                  aiTool === t.value ? "bg-brand-600 border-brand-500 text-white" : "bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700"
-                }`}
-              >
-                {t.label}
               </button>
             ))}
           </div>
