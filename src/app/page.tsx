@@ -56,8 +56,8 @@ export default function ArticlesPage() {
       const params = new URLSearchParams({
         page: String(page),
         limit: "10",
-        sort: "fetchedAt",
-        order: "desc",
+        sort: "publishedAt",
+        order: "asc",
         ...(filters.category && { category: filters.category }),
         ...(filters.search && { search: filters.search }),
         ...(filters.sentiment && { sentiment: filters.sentiment }),

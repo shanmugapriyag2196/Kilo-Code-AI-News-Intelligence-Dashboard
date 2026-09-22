@@ -129,7 +129,7 @@ async function fetchFromNewsAPI(category?: string): Promise<RawNewsAPIArticle[]>
     }
   }
 
-  return articles.slice(0, 10);
+  return articles.slice(0, 20);
 }
 
 export async function refreshNews(): Promise<RefreshResult> {
