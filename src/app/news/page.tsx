@@ -14,12 +14,6 @@ interface Article {
   sentiment: "positive" | "neutral" | "negative";
 }
 
-const COUNTRIES = [
-  { label: "All Countries", value: "" },
-  { label: "India", value: "India" },
-  { label: "United States", value: "US" }
-];
-
 const DATE_FILTERS = [
   { label: "Today", value: "today" },
   { label: "Yesterday", value: "yesterday" },
@@ -29,7 +23,6 @@ const DATE_FILTERS = [
 
 export default function NewsPage() {
   const [articles, setArticles] = useState<Article[]>([]);
-  const [country, setCountry] = useState("");
   const [dateFilter, setDateFilter] = useState("today");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +35,6 @@ export default function NewsPage() {
         limit: "10",
         dateFilter: dateFilter
       });
-      if (country) params.set("country", country);
       const res = await fetch(`/api/news?${params}`);
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -57,7 +49,7 @@ export default function NewsPage() {
     }
   }
 
-  useEffect(() => { load(); }, [country, dateFilter]);
+  useEffect(() => { load(); }, [dateFilter]);
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -79,8 +71,7 @@ export default function NewsPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-4 space-y-4">
-        {/* Date */}
+      <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-4">
         <div>
           <label className="text-xs font-medium text-slate-400 mb-2 block">Date Range</label>
           <div className="flex flex-wrap gap-2">
@@ -93,24 +84,6 @@ export default function NewsPage() {
                 }`}
               >
                 {d.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Country */}
-        <div>
-          <label className="text-xs font-medium text-slate-400 mb-2 block">Country</label>
-          <div className="flex flex-wrap gap-2">
-            {COUNTRIES.map((c) => (
-              <button
-                key={c.value}
-                onClick={() => setCountry(c.value)}
-                className={`px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-                  country === c.value ? "bg-brand-600 border-brand-500 text-white" : "bg-slate-700/50 border-slate-600 text-slate-300 hover:bg-slate-700"
-                }`}
-              >
-                {c.label}
               </button>
             ))}
           </div>
@@ -134,7 +107,7 @@ export default function NewsPage() {
           <div className="text-6xl mb-4">🤖</div>
           <h3 className="text-xl font-semibold text-white mb-2">No articles found</h3>
           <p className="text-slate-400">
-            No AI news for {DATE_FILTERS.find(d => d.value === dateFilter)?.label.toLowerCase()}{country ? ` in ${country}` : ""}.
+            No AI news for {DATE_FILTERS.find(d => d.value === dateFilter)?.label.toLowerCase()}.
           </p>
         </div>
       ) : (
