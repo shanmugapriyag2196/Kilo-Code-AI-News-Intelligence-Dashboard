@@ -123,28 +123,32 @@ async function fetchFromNewsAPI(category?: string): Promise<RawNewsAPIArticle[]>
   const articles: RawNewsAPIArticle[] = [];
   const errors: string[] = [];
 
-  // Use /everything with India keyword (free-tier compatible)
-  const url = `https://newsapi.org/v2/everything?q=India+technology+AI&language=en&sortBy=publishedAt&pageSize=50&apiKey=${NEWSAPI_KEY}`;
-  try {
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) {
-      const txt = await res.text();
-      errors.push(`HTTP ${res.status}: ${txt.slice(0, 300)}`);
-    } else {
+  // Focus on specific AI tool releases from major companies
+  const queries = ["OpenAI", "ChatGPT", "Anthropic Claude", "Google Gemini", "Microsoft Copilot", "DeepSeek", "Meta AI", "Mistral", "NVIDIA AI", "Hugging Face"];
+
+  for (const q of queries) {
+    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(q)}&language=en&sortBy=publishedAt&pageSize=20&apiKey=${NEWSAPI_KEY}`;
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) {
+        const txt = await res.text();
+        errors.push(`${q}: HTTP ${res.status} ${txt.slice(0, 200)}`);
+        continue;
+      }
       const data: NewsAPIResponse = await res.json();
       if (data.status === "error") {
-        errors.push(data.message || "Unknown NewsAPI error");
-      } else {
-        for (const a of data.articles || []) {
-          if (!a.url || !a.title) continue;
-          if (seen.has(a.url)) continue;
-          seen.add(a.url);
-          articles.push(a);
-        }
+        errors.push(`${q}: ${data.message}`);
+        continue;
       }
+      for (const a of data.articles || []) {
+        if (!a.url || !a.title) continue;
+        if (seen.has(a.url)) continue;
+        seen.add(a.url);
+        articles.push(a);
+      }
+    } catch (e: any) {
+      errors.push(`${q}: ${e.message}`);
     }
-  } catch (e: any) {
-    errors.push(e.message);
   }
 
   console.log("fetchFromNewsAPI", { fetched: articles.length, errors });
@@ -302,11 +306,14 @@ async function fetchArticlesFromNewsAPI(): Promise<RawNewsAPIArticle[]> {
   const seen = new Set<string>();
   const articles: RawNewsAPIArticle[] = [];
 
-  // Use /everything with India keyword (free-tier compatible)
-  const url = `https://newsapi.org/v2/everything?q=India+technology+AI&language=en&sortBy=publishedAt&pageSize=50&apiKey=${NEWSAPI_KEY}`;
-  try {
-    const res = await fetch(url, { cache: "no-store" });
-    if (res.ok) {
+  // Focus on specific AI tool releases from major companies
+  const queries = ["OpenAI", "ChatGPT", "Anthropic Claude", "Google Gemini", "Microsoft Copilot", "DeepSeek", "Meta AI", "Mistral", "NVIDIA AI", "Hugging Face"];
+
+  for (const q of queries) {
+    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(q)}&language=en&sortBy=publishedAt&pageSize=20&apiKey=${NEWSAPI_KEY}`;
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) continue;
       const data: NewsAPIResponse = await res.json();
       for (const a of data.articles || []) {
         if (!a.url || !a.title) continue;
@@ -314,9 +321,9 @@ async function fetchArticlesFromNewsAPI(): Promise<RawNewsAPIArticle[]> {
         seen.add(a.url);
         articles.push(a);
       }
+    } catch {
+      // ignore individual query failures
     }
-  } catch {
-    // ignore
   }
 
   return articles.slice(0, 20);
