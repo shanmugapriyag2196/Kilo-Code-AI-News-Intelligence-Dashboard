@@ -46,9 +46,13 @@ function simpleSummary(text: string | null, max = 200): string | null {
 function guessCategory(article: RawNewsAPIArticle): string | null {
   const hay = `${article.title || ""} ${article.description || ""}`.toLowerCase();
 
-  // Accept any technology article from NewsAPI top-headlines
-  const tool = /(make\b|n8n|copilot|github copilot|microsoft copilot|chatgpt|gpt-4|gpt-5|gpt4|gpt5|openai|anthropic|claude|gemini|google gemini|deepseek|perplexity|midjourney|dall-e|stable diffusion|runway|pika|sora|kling|hugging ?face|replicate|langchain|llama|mistral|phi-|granite|command r|nvidia|intel|amd|qualcomm|apple silicon|microsoft|google|amazon|meta|aws|azure|gcp|ai\b|artificial intelligence|machine learning|deep learning|neural network|llm|generative|automation|robot|software|developer|programming|api|saas|cloud|devops|cybersecurity|data science|analytics|algorithm|model|inference|training|tensor|transformer|diffusion|voice|speech|nlp|computer vision|semiconductor|chip|gpu|hardware|startup|tech|technology|digital|compute)/i;
-  if (tool.test(hay)) return "Artificial Intelligence";
+  // Reject non-IT/Software topics
+  const nonTarget = /(sports|football|cricket|ipl|world cup|olympics|athlete|stadium|player|match|tournament|movie|film|bollywood|hollywood|celebrity|music|album|concert|fashion|luxury|travel|tourism|hotel|recipe|food|cuisine|cooking|restaurant|health|medical|hospital|patient|disease|cancer|vaccine|drug|pharma|fitness|wellness|agriculture|farm|crop|livestock|fishing|mining|forestry|real estate|property|house|apartment|mortgage|insurance|banking|finance|investment|stock market|trading|economy|economics|inflation|recession|unemployment|wage|salary|tax|budget|government|politics|election|senator|congress|president|vote|law|policy|regulation|military|war|weapon|defense|conflict|missile|bomb|attack|terrorist|disaster|storm|flood|earthquake|fire|wildfire|hurricane|weather|climate|temperature|rain|snow|wind|energy|oil|gas|coal|solar|wind farm|nuclear power|electricity|grid|utility|entertainment|gaming|esports|lottery|casino|gambling|religion|spiritual|god|temple|church|mosque|buddhist|hindu|muslim|christian|sikh|jain)/i;
+  if (nonTarget.test(hay)) return null;
+
+  // Must contain IT/Software/AI keywords
+  const target = /(ai\b|artificial intelligence|machine learning|deep learning|neural network|llm|generative|automation|robot|software|developer|programming|api|saas|cloud|devops|cybersecurity|data science|analytics|algorithm|model|inference|training|tensor|transformer|diffusion|voice|speech|nlp|computer vision|semiconductor|chip|gpu|hardware|startup|tech|technology|digital|compute|openai|anthropic|claude|gemini|chatgpt|copilot|make\b|n8n|midjourney|stable diffusion|hugging face|replicate|langchain|deepseek|perplexity|mistral|llama|nvidia|intel|amd|qualcomm|microsoft|google|amazon|meta|aws|azure|gcp|xiaomi)/i;
+  if (target.test(hay)) return "Artificial Intelligence";
   return null;
 }
 
@@ -119,8 +123,8 @@ async function fetchFromNewsAPI(category?: string): Promise<RawNewsAPIArticle[]>
   const articles: RawNewsAPIArticle[] = [];
   const errors: string[] = [];
 
-  // Single query to avoid rate limiting (free tier: 100 req/24h)
-  const url = `https://newsapi.org/v2/top-headlines?category=technology&language=en&pageSize=50&apiKey=${NEWSAPI_KEY}`;
+  // Single query: India + Technology (IT/Software)
+  const url = `https://newsapi.org/v2/top-headlines?category=technology&language=en&pageSize=50&country=in&apiKey=${NEWSAPI_KEY}`;
   try {
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) {
@@ -298,8 +302,8 @@ async function fetchArticlesFromNewsAPI(): Promise<RawNewsAPIArticle[]> {
   const seen = new Set<string>();
   const articles: RawNewsAPIArticle[] = [];
 
-  // Single query to avoid rate limiting
-  const url = `https://newsapi.org/v2/top-headlines?category=technology&language=en&pageSize=50&apiKey=${NEWSAPI_KEY}`;
+  // Single query: India + Technology
+  const url = `https://newsapi.org/v2/top-headlines?category=technology&language=en&pageSize=50&country=in&apiKey=${NEWSAPI_KEY}`;
   try {
     const res = await fetch(url, { cache: "no-store" });
     if (res.ok) {
