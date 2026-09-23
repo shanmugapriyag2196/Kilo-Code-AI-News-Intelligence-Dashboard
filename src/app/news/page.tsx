@@ -15,6 +15,26 @@ interface Article {
   summary: string | null;
 }
 
+function detectTool(a: Article): string {
+  const hay = `${a.title || ""} ${a.summary || ""} ${a.description || ""}`.toLowerCase();
+  if (/(xiaomi|mimo)/i.test(hay)) return "Xiaomi MiMo";
+  if (/(notebooklm|dream beans|gemini|bard)/i.test(hay)) return "Google NotebookLM / Gemini";
+  if (/(openai|gpt|chatgpt)/i.test(hay)) return "OpenAI / ChatGPT";
+  if (/(anthropic|claude)/i.test(hay)) return "Anthropic / Claude";
+  if (/(meta)/i.test(hay)) return "Meta";
+  if (/(deepseek)/i.test(hay)) return "DeepSeek";
+  if (/(mistral)/i.test(hay)) return "Mistral";
+  if (/(nvidia)/i.test(hay)) return "NVIDIA";
+  if (/(make\b)/i.test(hay)) return "Make";
+  if (/(n8n)/i.test(hay)) return "N8N";
+  if (/(copilot)/i.test(hay)) return "Copilot";
+  if (/(midjourney)/i.test(hay)) return "Midjourney";
+  if (/(stable diffusion)/i.test(hay)) return "Stable Diffusion";
+  if (/(perplexity)/i.test(hay)) return "Perplexity";
+  if (/(hugging ?face)/i.test(hay)) return "Hugging Face";
+  return "Other AI Tools";
+}
+
 const DATE_FILTERS = [
   { label: "Today", value: "today" },
   { label: "Yesterday", value: "yesterday" },
@@ -54,6 +74,15 @@ export default function NewsPage() {
   }
 
   useEffect(() => { load(); }, [dateFilter]);
+
+  // Group articles by detected AI tool
+  const groups = new Map<string, Article[]>();
+  for (const a of articles) {
+    const tool = detectTool(a);
+    if (!groups.has(tool)) groups.set(tool, []);
+    groups.get(tool)!.push(a);
+  }
+  const sortedGroups = Array.from(groups.entries()).sort((a, b) => b[1].length - a[1].length);
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -99,9 +128,9 @@ export default function NewsPage() {
       )}
 
       {loading ? (
-        <div className="space-y-3">
-          {[...Array(10)].map((_, i) => (
-            <div key={i} className="h-16 bg-slate-800/30 rounded-xl animate-pulse" />
+        <div className="space-y-4">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-24 bg-slate-800/30 rounded-xl animate-pulse" />
           ))}
         </div>
       ) : articles.length === 0 ? (
@@ -113,39 +142,51 @@ export default function NewsPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-1">
-          {articles.slice(0, 10).map((a, i) => {
-            const dateStr = new Date(a.publishedAt).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric"
-            });
-            return (
-              <div key={a.id || a.url} className="flex gap-3 px-2 py-2 hover:bg-slate-800/30 rounded-lg transition-colors">
-                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-brand-500/15 text-brand-300 text-xs font-bold flex items-center justify-center mt-0.5">
-                  {i + 1}
+        <div className="space-y-6">
+          {sortedGroups.map(([tool, items]) => (
+            <div key={tool} className="bg-slate-800/40 border border-slate-700/50 rounded-xl overflow-hidden">
+              <div className="flex items-center gap-2 px-5 py-3 border-b border-slate-700/50 bg-slate-800/60">
+                <h3 className="text-base font-semibold text-white">{tool}</h3>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-300 border border-brand-500/30">
+                  {items.length}
                 </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-slate-200 leading-relaxed">
-                    <a
-                      href={a.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:text-brand-300 transition-colors"
-                    >
-                      {a.title}
-                    </a>
-                    {a.summary && (
-                      <span className="text-slate-400">: {a.summary}</span>
-                    )}
-                  </p>
-                  <p className="text-xs text-slate-500 mt-1">
-                    {a.sourceName} · {dateStr}
-                  </p>
-                </div>
               </div>
-            );
-          })}
+              <div className="divide-y divide-slate-700/30">
+                {items.map((a) => {
+                  const dateStr = new Date(a.publishedAt).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric"
+                  });
+                  return (
+                    <div key={a.id || a.url} className="flex gap-3 px-5 py-3 hover:bg-slate-800/30 transition-colors">
+                      <div className="flex flex-col items-center pt-1">
+                        <span className="w-2 h-2 rounded-full bg-brand-500 flex-shrink-0" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-slate-200 leading-relaxed">
+                          <a
+                            href={a.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-brand-300 transition-colors"
+                          >
+                            {a.title}
+                          </a>
+                        </p>
+                        {a.summary && (
+                          <p className="text-xs text-slate-400 mt-1 line-clamp-2">{a.summary}</p>
+                        )}
+                        <p className="text-xs text-slate-500 mt-1">
+                          {a.sourceName} · {dateStr}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

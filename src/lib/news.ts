@@ -260,7 +260,6 @@ export async function refreshArticles(): Promise<RefreshResult> {
         content,
         url,
         imageUrl: raw.urlToImage,
-        thumbnailUrl: raw.urlToImage,
         sourceName: raw.source?.name || "Unknown",
         sourceDomain: extractDomain(url),
         author: raw.author,
