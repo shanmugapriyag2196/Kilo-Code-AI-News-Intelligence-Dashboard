@@ -15,7 +15,8 @@ export function getAirtableBase() {
       endpointUrl: "https://api.airtable.com",
     }).base(AIRTABLE_BASE_ID),
     articlesTable: process.env.AIRTABLE_ARTICLES_TABLE || "Articles",
-    newsTable: process.env.AIRTABLE_NEWS_TABLE || "News"
+    newsTable: process.env.AIRTABLE_NEWS_TABLE || "News",
+    toolsTable: process.env.AIRTABLE_TOOLS_TABLE || "Tools"
   };
 }
 
@@ -27,6 +28,11 @@ export function getArticlesTable() {
 export function getNewsTable() {
   const { base, newsTable } = getAirtableBase();
   return base(newsTable);
+}
+
+export function getToolsTable() {
+  const { base, toolsTable } = getAirtableBase();
+  return base(toolsTable);
 }
 
 // Legacy alias for backward compat
@@ -281,8 +287,25 @@ export async function listArticles(options: {
     total,
     page,
     limit,
-    hasMore: pageOffset + limit < total
+hasMore: pageOffset + limit < total
   };
+}
+
+// ── Tools table functions ────────────────────────────────────────
+
+export async function listTools(limit = 20) {
+  const table = getToolsTable();
+  const records = await table.select({
+    sort: [{ field: "createdAt", direction: "desc" }],
+    pageSize: limit
+  }).all();
+  return records;
+}
+
+export async function createTool(fields: Record<string, any>) {
+  const table = getToolsTable();
+  const clean = stripEmptyFields(fields);
+  return (await table.create([{ fields: clean }]))[0];
 }
 
 export async function fetchAllRecords(table: any, options: any = {}): Promise<any[]> {
