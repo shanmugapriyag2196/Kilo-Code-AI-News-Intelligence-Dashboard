@@ -123,8 +123,8 @@ async function fetchFromNewsAPI(category?: string): Promise<RawNewsAPIArticle[]>
   const articles: RawNewsAPIArticle[] = [];
   const errors: string[] = [];
 
-  // Single query: India + Technology (IT/Software)
-  const url = `https://newsapi.org/v2/top-headlines?category=technology&language=en&pageSize=50&country=in&apiKey=${NEWSAPI_KEY}`;
+  // Use /everything with India keyword (free-tier compatible)
+  const url = `https://newsapi.org/v2/everything?q=India+technology+AI&language=en&sortBy=publishedAt&pageSize=50&apiKey=${NEWSAPI_KEY}`;
   try {
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) {
@@ -302,8 +302,8 @@ async function fetchArticlesFromNewsAPI(): Promise<RawNewsAPIArticle[]> {
   const seen = new Set<string>();
   const articles: RawNewsAPIArticle[] = [];
 
-  // Single query: India + Technology
-  const url = `https://newsapi.org/v2/top-headlines?category=technology&language=en&pageSize=50&country=in&apiKey=${NEWSAPI_KEY}`;
+  // Use /everything with India keyword (free-tier compatible)
+  const url = `https://newsapi.org/v2/everything?q=India+technology+AI&language=en&sortBy=publishedAt&pageSize=50&apiKey=${NEWSAPI_KEY}`;
   try {
     const res = await fetch(url, { cache: "no-store" });
     if (res.ok) {
