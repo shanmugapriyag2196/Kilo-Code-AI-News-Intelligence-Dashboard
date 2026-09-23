@@ -225,7 +225,8 @@ export async function refreshNews(): Promise<RefreshResult> {
     updated: updatedCount,
     duplicatesSkipped,
     lastRefreshed: new Date().toISOString(),
-    errors: errors.length ? errors : undefined
+    errors: errors.length ? errors : undefined,
+    articles
   };
 }
 
@@ -298,7 +299,8 @@ export async function refreshArticles(): Promise<RefreshResult> {
     updated: updatedCount,
     duplicatesSkipped,
     lastRefreshed: new Date().toISOString(),
-    errors: errors.length ? errors : undefined
+    errors: errors.length ? errors : undefined,
+    articles
   };
 }
 
@@ -336,7 +338,7 @@ export async function searchArticles(query: string, limit = 10) {
   return records;
 }
 
-export async function seedTools(): Promise<{ seeded: number }> {
+export async function seedTools(articles?: RawNewsAPIArticle[]): Promise<{ seeded: number }> {
   const existing = await listTools(50);
   const existingNames = new Set(
     existing.map((r: any) => (r.fields?.name || "").toLowerCase())
@@ -389,6 +391,30 @@ export async function seedTools(): Promise<{ seeded: number }> {
       icon: "⚡"
     }
   ];
+
+  // Extract new tool names from NewsAPI articles
+  const toolPattern = /\b(OpenAI|ChatGPT|Claude|Gemini|Copilot|DeepSeek|Mistral|NVIDIA|Hugging Face|Midjourney|Stable Diffusion|Perplexity|Make|N8n|Lovable|Bolt|Granola|Viktor|Flow|Co-work)\b/gi;
+  if (articles) {
+    for (const a of articles) {
+      const hay = `${a.title || ""} ${a.description || ""}`;
+      const matches = hay.match(toolPattern);
+      if (matches) {
+        const unique = Array.from(new Set(matches));
+        for (const m of unique) {
+          const toolName = m.trim();
+          if (existingNames.has(toolName.toLowerCase())) continue;
+          SEED_TOOLS.push({
+            name: toolName,
+            description: a.description || a.title || "",
+            category: "AI Tool",
+            releaseDate: a.publishedAt ? new Date(a.publishedAt).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+            url: a.url || "",
+            icon: "🤖"
+          });
+        }
+      }
+    }
+  }
 
   let seeded = 0;
   for (const tool of SEED_TOOLS) {

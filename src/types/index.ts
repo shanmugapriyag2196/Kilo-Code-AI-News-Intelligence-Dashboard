@@ -57,4 +57,5 @@ export interface RefreshResult {
   duplicatesSkipped: number;
   lastRefreshed: string;
   errors?: string[];
+  articles?: RawNewsAPIArticle[];
 }

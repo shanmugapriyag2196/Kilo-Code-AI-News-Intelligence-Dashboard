@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
   try {
     const newsResult = await refreshNews();
     const articlesResult = await refreshArticles();
-    const toolsResult = await seedTools();
+    const toolsResult = await seedTools(articlesResult.articles);
     const stats = await getStats();
     const key = process.env.NEWSAPI_KEY || "";
     return NextResponse.json({
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   try {
     const newsResult = await refreshNews();
     const articlesResult = await refreshArticles();
-    const toolsResult = await seedTools();
+    const toolsResult = await seedTools(articlesResult.articles);
     const stats = await getStats();
     const key = process.env.NEWSAPI_KEY || "";
     return NextResponse.json({
