@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
-import ToolsSection from "@/components/ToolsSection";
 
 interface Article {
   id?: string;
@@ -190,16 +189,6 @@ export default function NewsPage() {
           ))}
         </div>
       )}
-
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <h3 className="text-lg font-semibold text-white">Top Recent AI Tools</h3>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-300 border border-brand-500/30">
-            This Week & Month
-          </span>
-        </div>
-        <ToolsSection />
-      </div>
     </div>
   );
 }
