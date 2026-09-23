@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { refreshNews, refreshArticles } from "@/lib/news";
+import { refreshNews, refreshArticles, seedTools } from "@/lib/news";
 import { getStats } from "@/lib/airtable";
 
 export async function GET(req: NextRequest) {
   try {
     const newsResult = await refreshNews();
     const articlesResult = await refreshArticles();
+    const toolsResult = await seedTools();
     const stats = await getStats();
     const key = process.env.NEWSAPI_KEY || "";
     return NextResponse.json({
       success: true,
-      data: { news: newsResult, articles: articlesResult },
+      data: { news: newsResult, articles: articlesResult, tools: toolsResult },
       stats,
       env: {
         NEWSAPI_KEY: key ? `${key.slice(0, 4)}...${key.slice(-4)}` : "MISSING",
@@ -34,11 +35,12 @@ export async function POST(req: NextRequest) {
   try {
     const newsResult = await refreshNews();
     const articlesResult = await refreshArticles();
+    const toolsResult = await seedTools();
     const stats = await getStats();
     const key = process.env.NEWSAPI_KEY || "";
     return NextResponse.json({
       success: true,
-      data: { news: newsResult, articles: articlesResult },
+      data: { news: newsResult, articles: articlesResult, tools: toolsResult },
       stats,
       env: {
         NEWSAPI_KEY: key ? `${key.slice(0, 4)}...${key.slice(-4)}` : "MISSING",
@@ -46,7 +48,8 @@ export async function POST(req: NextRequest) {
         AIRTABLE_BASE_ID: process.env.AIRTABLE_BASE_ID ? "set" : "MISSING",
         AIRTABLE_API_KEY: process.env.AIRTABLE_API_KEY ? "set" : "MISSING",
         AIRTABLE_NEWS_TABLE: process.env.AIRTABLE_NEWS_TABLE || "News",
-        AIRTABLE_ARTICLES_TABLE: process.env.AIRTABLE_ARTICLES_TABLE || "Articles"
+        AIRTABLE_ARTICLES_TABLE: process.env.AIRTABLE_ARTICLES_TABLE || "Articles",
+        AIRTABLE_TOOLS_TABLE: process.env.AIRTABLE_TOOLS_TABLE || "Tools"
       }
     });
   } catch (e: any) {
@@ -61,7 +64,8 @@ export async function POST(req: NextRequest) {
         AIRTABLE_BASE_ID: process.env.AIRTABLE_BASE_ID ? "set" : "MISSING",
         AIRTABLE_API_KEY: process.env.AIRTABLE_API_KEY ? "set" : "MISSING",
         AIRTABLE_NEWS_TABLE: process.env.AIRTABLE_NEWS_TABLE || "News",
-        AIRTABLE_ARTICLES_TABLE: process.env.AIRTABLE_ARTICLES_TABLE || "Articles"
+        AIRTABLE_ARTICLES_TABLE: process.env.AIRTABLE_ARTICLES_TABLE || "Articles",
+        AIRTABLE_TOOLS_TABLE: process.env.AIRTABLE_TOOLS_TABLE || "Tools"
       }
     }, { status: 500 });
   }

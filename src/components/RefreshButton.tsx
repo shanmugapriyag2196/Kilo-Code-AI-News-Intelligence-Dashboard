@@ -44,6 +44,9 @@ export function RefreshButton({ onRefreshed }: { onRefreshed?: () => void }) {
             News: {result.news?.new || 0} new ({result.news?.fetched || 0} fetched, {result.news?.duplicatesSkipped || 0} dup) ·{" "}
             Articles: {result.articles?.new || 0} new ({result.articles?.fetched || 0} fetched, {result.articles?.duplicatesSkipped || 0} dup)
           </p>
+          {result.tools && (
+            <p>Tools: {result.tools?.seeded || 0} seeded</p>
+          )}
           {result.news?.errors && result.news.errors.length > 0 && (
             <p className="text-rose-400">News errors: {result.news.errors.slice(0, 3).join("; ")}</p>
           )}

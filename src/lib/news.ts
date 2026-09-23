@@ -8,7 +8,9 @@ import {
   listArticles,
   findNewsByHash,
   findNewsByURL,
-  createNews
+  createNews,
+  createTool,
+  listTools
 } from "./airtable";
 import { NewsAPIResponse, RawNewsAPIArticle, NewsArticle, RefreshResult } from "../types";
 
@@ -332,4 +334,71 @@ async function fetchArticlesFromNewsAPI(): Promise<RawNewsAPIArticle[]> {
 export async function searchArticles(query: string, limit = 10) {
   const { records } = await listArticles({ search: query, limit });
   return records;
+}
+
+export async function seedTools(): Promise<{ seeded: number }> {
+  const existing = await listTools(50);
+  const existingNames = new Set(
+    existing.map((r: any) => (r.fields?.name || "").toLowerCase())
+  );
+
+  const SEED_TOOLS = [
+    {
+      name: "Viktor",
+      description:
+        "An AI teammate that integrates directly into Slack or Teams, reading channel context and proactively taking work off your plate.",
+      category: "AI Agent",
+      releaseDate: "2026-09-22",
+      url: "https://www.viktor.ai",
+      icon: "🤖"
+    },
+    {
+      name: "Granola AI",
+      description:
+        "A passive meeting transcription and summarization tool that records audio from your laptop locally without needing to join the virtual call.",
+      category: "Productivity",
+      releaseDate: "2026-09-22",
+      url: "https://granola.ai",
+      icon: "🎙️"
+    },
+    {
+      name: "Google Flow",
+      description:
+        "An end-to-end multimedia and video generation platform capable of turning single images and text prompts into dynamic animations.",
+      category: "Video Generation",
+      releaseDate: "2026-09-22",
+      url: "https://flow.google",
+      icon: "🎬"
+    },
+    {
+      name: "Claude Co-work",
+      description:
+        "An advanced desktop-automation agent built for handling long-document reasoning, file management, and repetitive tasks.",
+      category: "Desktop Automation",
+      releaseDate: "2026-09-22",
+      url: "https://claude.ai/co-work",
+      icon: "💻"
+    },
+    {
+      name: "Lovable / Bolt",
+      description:
+        "Popular 'vibe-coding' platforms that let users build functional software applications purely through conversational prompts.",
+      category: "No-Code",
+      releaseDate: "2026-09-22",
+      url: "https://lovable.dev",
+      icon: "⚡"
+    }
+  ];
+
+  let seeded = 0;
+  for (const tool of SEED_TOOLS) {
+    if (existingNames.has(tool.name.toLowerCase())) continue;
+    try {
+      await createTool({ ...tool, createdAt: new Date().toISOString() });
+      seeded++;
+    } catch (e: any) {
+      console.error(`seedTools: failed for ${tool.name}:`, e.message);
+    }
+  }
+  return { seeded };
 }
