@@ -517,7 +517,7 @@ export async function seedTechnology(): Promise<{ seeded: number; errors?: strin
   for (const tech of SEED_TECH) {
     if (existingNames.has(tech.Tool.toLowerCase())) continue;
     try {
-      await createTechnology({ ...tech, createdAt: new Date().toISOString() });
+      await createTechnology({ ...tech });
       seeded++;
     } catch (e: any) {
       errors.push(`${tech.Tool}: ${e.message}`);
