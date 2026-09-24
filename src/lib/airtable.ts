@@ -368,6 +368,35 @@ export async function getStats() {
   };
 }
 
+export async function getAllStats() {
+  const articles = await getStats();
+  let newsCount = 0;
+  let toolsCount = 0;
+  let technologyCount = 0;
+
+  try {
+    const news = await fetchAllRecords(getNewsTable());
+    newsCount = news.length;
+  } catch { /* ignore */ }
+
+  try {
+    const tools = await fetchAllRecords(getToolsTable());
+    toolsCount = tools.length;
+  } catch { /* ignore */ }
+
+  try {
+    const tech = await fetchAllRecords(getTechnologyTable());
+    technologyCount = tech.length;
+  } catch { /* ignore */ }
+
+  return {
+    ...articles,
+    newsCount,
+    toolsCount,
+    technologyCount
+  };
+}
+
 export async function getDistinctCategories() {
   const table = getTable();
   const all = await fetchAllRecords(table);

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import StatsCards from "@/components/StatsCards";
 import { CategoryChart } from "@/components/CategoryChart";
+import { SentimentPieChart } from "@/components/SentimentPieChart";
 import { RefreshButton } from "@/components/RefreshButton";
 
 interface StatsData {
@@ -11,6 +12,9 @@ interface StatsData {
   bySentiment: { positive: number; neutral: number; negative: number };
   saved: number;
   lastRefreshed: string | null;
+  newsCount: number;
+  toolsCount: number;
+  technologyCount: number;
 }
 
 export default function DashboardPage() {
@@ -44,10 +48,14 @@ export default function DashboardPage() {
     return (
       <div className="space-y-6">
         <div className="h-8 w-48 bg-slate-800/50 rounded animate-pulse" />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[...Array(7)].map((_, i) => (
             <div key={i} className="h-24 bg-slate-800/30 rounded-xl animate-pulse" />
           ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 h-80 bg-slate-800/30 rounded-xl animate-pulse" />
+          <div className="h-80 bg-slate-800/30 rounded-xl animate-pulse" />
         </div>
       </div>
     );
@@ -90,49 +98,23 @@ export default function DashboardPage() {
         <div className="lg:col-span-2">
           <CategoryChart data={stats.byCategory} />
         </div>
-        <div className="space-y-4">
-          <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-5">
-            <h3 className="text-lg font-semibold text-white mb-4">Sentiment Breakdown</h3>
-            <div className="space-y-3">
-              {(["positive", "neutral", "negative"] as const).map((s) => {
-                const total = stats.total || 1;
-                const pct = Math.round((stats.bySentiment[s] / total) * 100);
-                const colors: Record<string, string> = {
-                  positive: "bg-emerald-500",
-                  neutral: "bg-slate-500",
-                  negative: "bg-rose-500"
-                };
-                return (
-                  <div key={s}>
-                    <div className="flex items-center justify-between text-sm mb-1">
-                      <span className="text-slate-300 capitalize">{s}</span>
-                      <span className="text-slate-400">{stats.bySentiment[s]} ({pct}%)</span>
-                    </div>
-                    <div className="h-2 bg-slate-700/50 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${colors[s]} transition-all duration-500`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-5">
-            <h3 className="text-lg font-semibold text-white mb-3">Top Categories</h3>
-            <div className="space-y-2">
-              {Object.entries(stats.byCategory)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 5)
-                .map(([cat, count]) => (
-                  <div key={cat} className="flex items-center justify-between text-sm">
-                    <span className="text-slate-300">{cat}</span>
-                    <span className="text-slate-400">{count}</span>
-                  </div>
-                ))}
-            </div>
-          </div>
+        <div>
+          <SentimentPieChart data={stats.bySentiment} />
+        </div>
+      </div>
+
+      <div className="bg-slate-800/40 border border-slate-700/50 rounded-xl p-5">
+        <h3 className="text-lg font-semibold text-white mb-4">Top Categories</h3>
+        <div className="space-y-2">
+          {Object.entries(stats.byCategory)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 8)
+            .map(([cat, count]) => (
+              <div key={cat} className="flex items-center justify-between text-sm">
+                <span className="text-slate-300">{cat}</span>
+                <span className="text-slate-400">{count}</span>
+              </div>
+            ))}
         </div>
       </div>
     </div>
