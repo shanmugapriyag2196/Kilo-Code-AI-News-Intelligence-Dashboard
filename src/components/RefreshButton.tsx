@@ -50,6 +50,9 @@ export function RefreshButton({ onRefreshed }: { onRefreshed?: () => void }) {
           {result.technology && (
             <p>Technology: {result.technology?.seeded || 0} seeded</p>
           )}
+          {result.technology?.errors && result.technology.errors.length > 0 && (
+            <p className="text-rose-400">Technology errors: {result.technology.errors.slice(0, 3).join("; ")}</p>
+          )}
           {result.news?.errors && result.news.errors.length > 0 && (
             <p className="text-rose-400">News errors: {result.news.errors.slice(0, 3).join("; ")}</p>
           )}

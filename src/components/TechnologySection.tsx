@@ -6,7 +6,7 @@ interface TechUpdate {
   id?: string;
   tool: string;
   category: "RPA" | "Automation" | "BI";
-  update: string;
+  "Recent Update": string;
   date: string;
   url: string;
   impact: string;
@@ -86,7 +86,7 @@ export default function TechnologySection() {
                 </span>
               </td>
               <td className="px-5 py-3 text-slate-300 max-w-md">
-                <p className="line-clamp-2">{u.update}</p>
+                <p className="line-clamp-2">{u["Recent Update"]}</p>
               </td>
               <td className="px-5 py-3 text-slate-400 whitespace-nowrap">{u.date}</td>
               <td className="px-5 py-3 text-slate-300 max-w-xs">
