@@ -6,6 +6,7 @@ interface TechUpdate {
   id?: string;
   Tool: string;
   Category: "RPA" | "Automation" | "BI";
+  Release: string;
   Update: string;
   Date: string;
   URL: string;
@@ -70,6 +71,7 @@ export default function TechnologySection() {
           <tr className="text-left text-xs uppercase tracking-wider text-slate-400 bg-slate-800/60">
             <th className="px-5 py-3 font-medium">Tool</th>
             <th className="px-5 py-3 font-medium">Category</th>
+            <th className="px-5 py-3 font-medium">Release</th>
             <th className="px-5 py-3 font-medium">Recent Update</th>
             <th className="px-5 py-3 font-medium">Date</th>
             <th className="px-5 py-3 font-medium">Impact</th>
@@ -85,6 +87,7 @@ export default function TechnologySection() {
                   {u.Category}
                 </span>
               </td>
+              <td className="px-5 py-3 text-slate-200 whitespace-nowrap text-xs">{u.Release}</td>
               <td className="px-5 py-3 text-slate-300 max-w-md">
                 <p className="line-clamp-2">{u.Update}</p>
               </td>

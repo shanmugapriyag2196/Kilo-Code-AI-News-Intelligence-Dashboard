@@ -441,6 +441,7 @@ export async function seedTechnology(): Promise<{ seeded: number; errors?: strin
     {
       Tool: "UiPath",
       Category: "RPA",
+      Release: "Cartographer, Delegate",
       Update: "UiPath released its Autumn 2026 suite featuring AI-powered document understanding and expanded generative process automation for enterprise workflows.",
       Date: "2026-09-20",
       URL: "https://www.uipath.com",
@@ -449,6 +450,7 @@ export async function seedTechnology(): Promise<{ seeded: number; errors?: strin
     {
       Tool: "Automation Anywhere",
       Category: "RPA",
+      Release: "Bot Store, IQ Bot",
       Update: "Automation Anywhere launched a cloud-native bot store with pre-built AI automation packs for finance and HR departments.",
       Date: "2026-09-18",
       URL: "https://www.automationanywhere.com",
@@ -457,6 +459,7 @@ export async function seedTechnology(): Promise<{ seeded: number; errors?: strin
     {
       Tool: "Blue Prism",
       Category: "RPA",
+      Release: "Digital Workforce, Self-Learning",
       Update: "Blue Prism introduced an intelligent digital workforce with real-time sentiment analysis and self-learning process models.",
       Date: "2026-09-15",
       URL: "https://www.blueprism.com",
@@ -465,6 +468,7 @@ export async function seedTechnology(): Promise<{ seeded: number; errors?: strin
     {
       Tool: "Make.com",
       Category: "Automation",
+      Release: "AI Scenario Templates, Visual Editor",
       Update: "Make.com rolled out AI scenario templates and a visual scenario editor that connects over 1,000 apps with no-code automation.",
       Date: "2026-09-21",
       URL: "https://www.make.com",
@@ -473,6 +477,7 @@ export async function seedTechnology(): Promise<{ seeded: number; errors?: strin
     {
       Tool: "N8N",
       Category: "Automation",
+      Release: "Self-Hosted Engine, Custom Nodes",
       Update: "N8N shipped a self-hosted AI workflow engine with custom node support, enabling teams to run proprietary automation pipelines on their own infrastructure.",
       Date: "2026-09-19",
       URL: "https://n8n.io",
@@ -481,6 +486,7 @@ export async function seedTechnology(): Promise<{ seeded: number; errors?: strin
     {
       Tool: "Zapier",
       Category: "Automation",
+      Release: "AI Actions, 5,000+ Integrations",
       Update: "Zapier added AI Actions that let workflows generate content, summarize data, and make decisions using large language models across 5,000+ integrations.",
       Date: "2026-09-17",
       URL: "https://zapier.com",
@@ -489,6 +495,7 @@ export async function seedTechnology(): Promise<{ seeded: number; errors?: strin
     {
       Tool: "Power BI",
       Category: "BI",
+      Release: "AI Insights, Q&A, Forecasting",
       Update: "Microsoft Power BI introduced AI-powered insights, natural language Q&A, and auto-generated forecasting models for enterprise dashboards.",
       Date: "2026-09-22",
       URL: "https://www.microsoft.com/en-us/power-platform/products/power-bi",
@@ -497,6 +504,7 @@ export async function seedTechnology(): Promise<{ seeded: number; errors?: strin
     {
       Tool: "Tableau",
       Category: "BI",
+      Release: "Data Storytelling, Anomaly Detection",
       Update: "Tableau released AI-driven data storytelling and anomaly detection, highlighting unexpected trends across enterprise data sources.",
       Date: "2026-09-14",
       URL: "https://www.tableau.com",
@@ -505,6 +513,7 @@ export async function seedTechnology(): Promise<{ seeded: number; errors?: strin
     {
       Tool: "Looker Studio",
       Category: "BI",
+      Release: "ML Forecasts, Semantic Modeling",
       Update: "Looker Studio added machine learning forecasts and semantic data modeling, letting teams build consistent metrics across reports.",
       Date: "2026-09-12",
       URL: "https://lookerstudio.google.com",
