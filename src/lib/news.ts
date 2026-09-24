@@ -431,102 +431,60 @@ export async function seedTools(articles?: RawNewsAPIArticle[]): Promise<{ seede
   return { seeded };
 }
 
-const TECH_QUERIES: { tool: string; category: "RPA" | "Automation" | "BI" }[] = [
-  { tool: "UiPath", category: "RPA" },
-  { tool: "Automation Anywhere", category: "RPA" },
-  { tool: "Blue Prism", category: "RPA" },
-  { tool: "Make.com", category: "Automation" },
-  { tool: "N8N", category: "Automation" },
-  { tool: "Zapier", category: "Automation" },
-  { tool: "Power BI", category: "BI" },
-  { tool: "Tableau", category: "BI" },
-  { tool: "Looker Studio", category: "BI" }
-];
-
-async function fetchTechNewsFromNewsAPI(): Promise<RawNewsAPIArticle[]> {
-  const NEWSAPI_KEY = getNewsAPIKey();
-  const seen = new Set<string>();
-  const articles: RawNewsAPIArticle[] = [];
-
-  for (const q of TECH_QUERIES) {
-    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(q.tool)}&language=en&sortBy=publishedAt&pageSize=5&apiKey=${NEWSAPI_KEY}`;
-    try {
-      const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) continue;
-      const data: NewsAPIResponse = await res.json();
-      for (const a of data.articles || []) {
-        if (!a.url || !a.title) continue;
-        if (seen.has(a.url)) continue;
-        seen.add(a.url);
-        articles.push(a);
-      }
-    } catch {
-      // ignore individual query failures
-    }
-  }
-  return articles.slice(0, 20);
-}
-
-function detectTechTool(article: RawNewsAPIArticle): { tool: string; category: "RPA" | "Automation" | "BI" } | null {
-  const hay = `${article.title || ""} ${article.description || ""}`.toLowerCase();
-  if (/(uipath)/i.test(hay)) return { tool: "UiPath", category: "RPA" };
-  if (/(automation anywhere)/i.test(hay)) return { tool: "Automation Anywhere", category: "RPA" };
-  if (/(blue prism)/i.test(hay)) return { tool: "Blue Prism", category: "RPA" };
-  if (/(make\.com|integromat)/i.test(hay)) return { tool: "Make.com", category: "Automation" };
-  if (/(n8n|n8n\.io)/i.test(hay)) return { tool: "N8N", category: "Automation" };
-  if (/(zapier)/i.test(hay)) return { tool: "Zapier", category: "Automation" };
-  if (/(power bi|powerbi)/i.test(hay)) return { tool: "Power BI", category: "BI" };
-  if (/(tableau)/i.test(hay)) return { tool: "Tableau", category: "BI" };
-  if (/(looker studio|looker)/i.test(hay)) return { tool: "Looker Studio", category: "BI" };
-  return null;
-}
-
-function extractReleaseName(title: string, tool: string): string {
-  const escaped = tool.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  let t = title.replace(new RegExp(`\\b${escaped}\\b`, "i"), "").trim();
-  t = t.replace(/^(released|launches?|announces?|introduces?|unveils?|ships?|gets?|adds?|brings?|now|with|for|the|a|an)\b/i, "").trim();
-  t = t.replace(/[.,;:!?]$/, "").trim();
-  return t || "—";
-}
-
 export async function seedTechnology(): Promise<{ seeded: number; errors?: string[] }> {
   const existing = await listTechnology(50);
   const existingURLs = new Set(
     existing.map((r: any) => (r.fields?.URL || "").toLowerCase())
   );
 
-  const articles = await fetchTechNewsFromNewsAPI();
+  const SEED_TECH = [
+    {
+      Tool: "UiPath",
+      Category: "RPA / Automation",
+      Release: "UiPath Cartographer",
+      Update: "Creates a living, governed \"Map of Work\" to give automation and AI agents better enterprise process context.",
+      Date: "2026-09-23",
+      URL: "https://www.uipath.com",
+      Impact: "Creates a living, governed \"Map of Work\" to give automation and AI agents better enterprise process context."
+    },
+    {
+      Tool: "UiPath",
+      Category: "RPA / Automation",
+      Release: "UiPath Platform enhancements",
+      Update: "Adds/enhances governance, data, connectivity and agent-deployment capabilities for enterprise automation.",
+      Date: "2026-09-23",
+      URL: "https://www.uipath.com",
+      Impact: "Adds/enhances governance, data, connectivity and agent-deployment capabilities for enterprise automation."
+    },
+    {
+      Tool: "UiPath",
+      Category: "RPA / Testing",
+      Release: "Test Cloud enhancements",
+      Update: "Adds capabilities for autonomous testing and AI-agent-assisted application exploration.",
+      Date: "2026-09-23",
+      URL: "https://www.uipath.com",
+      Impact: "Adds capabilities for autonomous testing and AI-agent-assisted application exploration."
+    },
+    {
+      Tool: "n8n",
+      Category: "Automation",
+      Release: "AI workflow/integration ecosystem updates",
+      Update: "n8n currently documents extensive AI-agent, model, vector-store and AI-tool integrations, but the Aug. 25 article itself is not a product release.",
+      Date: "Recent",
+      URL: "https://n8n.io",
+      Impact: "n8n currently documents extensive AI-agent, model, vector-store and AI-tool integrations, but the Aug. 25 article itself is not a product release."
+    }
+  ];
 
   let seeded = 0;
   const errors: string[] = [];
-  for (const a of articles) {
-    const detected = detectTechTool(a);
-    if (!detected) continue;
-    const url = a.url!.trim();
-    if (existingURLs.has(url.toLowerCase())) continue;
-
-    const tool = detected.tool;
-    const category = detected.category;
-    const release = extractReleaseName(a.title!, tool);
-    const update = simpleSummary(a.content || a.description) || a.title!;
-    const date = a.publishedAt ? new Date(a.publishedAt).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
-    const impact = guessSentiment(`${a.title || ""} ${a.description || ""}`) === "positive"
-      ? "Positive market reception expected"
-      : "Monitor adoption and competitive response";
-
+  for (const tech of SEED_TECH) {
+    if (existingURLs.has((tech.URL || "").toLowerCase())) continue;
     try {
-      await createTechnology({
-        Tool: tool,
-        Category: category,
-        Release: release,
-        Update: update,
-        Date: date,
-        URL: url,
-        Impact: impact
-      });
+      await createTechnology({ ...tech });
       seeded++;
     } catch (e: any) {
-      errors.push(`${tool}: ${e.message}`);
+      errors.push(`${tech.Tool}: ${e.message}`);
     }
   }
   return { seeded, errors: errors.length ? errors : undefined };
