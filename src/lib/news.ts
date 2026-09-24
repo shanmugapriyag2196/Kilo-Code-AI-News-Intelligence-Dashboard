@@ -434,93 +434,93 @@ export async function seedTools(articles?: RawNewsAPIArticle[]): Promise<{ seede
 export async function seedTechnology(): Promise<{ seeded: number; errors?: string[] }> {
   const existing = await listTechnology(50);
   const existingNames = new Set(
-    existing.map((r: any) => (r.fields?.tool || "").toLowerCase())
+    existing.map((r: any) => (r.fields?.Tool || "").toLowerCase())
   );
 
   const SEED_TECH = [
     {
-      tool: "UiPath",
-      category: "RPA",
+      Tool: "UiPath",
+      Category: "RPA",
       "Recent Update": "UiPath released its Autumn 2026 suite featuring AI-powered document understanding and expanded generative process automation for enterprise workflows.",
-      date: "2026-09-20",
-      url: "https://www.uipath.com",
-      impact: "Accelerates enterprise automation with native AI document processing"
+      Date: "2026-09-20",
+      URL: "https://www.uipath.com",
+      Impact: "Accelerates enterprise automation with native AI document processing"
     },
     {
-      tool: "Automation Anywhere",
-      category: "RPA",
+      Tool: "Automation Anywhere",
+      Category: "RPA",
       "Recent Update": "Automation Anywhere launched a cloud-native bot store with pre-built AI automation packs for finance and HR departments.",
-      date: "2026-09-18",
-      url: "https://www.automationanywhere.com",
-      impact: "Reduces RPA setup time with ready-made automation components"
+      Date: "2026-09-18",
+      URL: "https://www.automationanywhere.com",
+      Impact: "Reduces RPA setup time with ready-made automation components"
     },
     {
-      tool: "Blue Prism",
-      category: "RPA",
+      Tool: "Blue Prism",
+      Category: "RPA",
       "Recent Update": "Blue Prism introduced an intelligent digital workforce with real-time sentiment analysis and self-learning process models.",
-      date: "2026-09-15",
-      url: "https://www.blueprism.com",
-      impact: "Enables autonomous process correction without manual retraining"
+      Date: "2026-09-15",
+      URL: "https://www.blueprism.com",
+      Impact: "Enables autonomous process correction without manual retraining"
     },
     {
-      tool: "Make.com",
-      category: "Automation",
+      Tool: "Make.com",
+      Category: "Automation",
       "Recent Update": "Make.com rolled out AI scenario templates and a visual scenario editor that connects over 1,000 apps with no-code automation.",
-      date: "2026-09-21",
-      url: "https://www.make.com",
-      impact: "Allows non-developers to build multi-step AI workflows visually"
+      Date: "2026-09-21",
+      URL: "https://www.make.com",
+      Impact: "Allows non-developers to build multi-step AI workflows visually"
     },
     {
-      tool: "N8N",
-      category: "Automation",
+      Tool: "N8N",
+      Category: "Automation",
       "Recent Update": "N8N shipped a self-hosted AI workflow engine with custom node support, enabling teams to run proprietary automation pipelines on their own infrastructure.",
-      date: "2026-09-19",
-      url: "https://n8n.io",
-      impact: "Provides data sovereignty for automation with extensible node framework"
+      Date: "2026-09-19",
+      URL: "https://n8n.io",
+      Impact: "Provides data sovereignty for automation with extensible node framework"
     },
     {
-      tool: "Zapier",
-      category: "Automation",
+      Tool: "Zapier",
+      Category: "Automation",
       "Recent Update": "Zapier added AI Actions that let workflows generate content, summarize data, and make decisions using large language models across 5,000+ integrations.",
-      date: "2026-09-17",
-      url: "https://zapier.com",
-      impact: "Brings generative AI into existing no-code automation recipes"
+      Date: "2026-09-17",
+      URL: "https://zapier.com",
+      Impact: "Brings generative AI into existing no-code automation recipes"
     },
     {
-      tool: "Power BI",
-      category: "BI",
+      Tool: "Power BI",
+      Category: "BI",
       "Recent Update": "Microsoft Power BI introduced AI-powered insights, natural language Q&A, and auto-generated forecasting models for enterprise dashboards.",
-      date: "2026-09-22",
-      url: "https://www.microsoft.com/en-us/power-platform/products/power-bi",
-      impact: "Lets business users query data in plain English with automatic trend forecasting"
+      Date: "2026-09-22",
+      URL: "https://www.microsoft.com/en-us/power-platform/products/power-bi",
+      Impact: "Lets business users query data in plain English with automatic trend forecasting"
     },
     {
-      tool: "Tableau",
-      category: "BI",
+      Tool: "Tableau",
+      Category: "BI",
       "Recent Update": "Tableau released AI-driven data storytelling and anomaly detection, highlighting unexpected trends across enterprise data sources.",
-      date: "2026-09-14",
-      url: "https://www.tableau.com",
-      impact: "Surfaces anomalies automatically to reduce manual data inspection"
+      Date: "2026-09-14",
+      URL: "https://www.tableau.com",
+      Impact: "Surfaces anomalies automatically to reduce manual data inspection"
     },
     {
-      tool: "Looker Studio",
-      category: "BI",
+      Tool: "Looker Studio",
+      Category: "BI",
       "Recent Update": "Looker Studio added machine learning forecasts and semantic data modeling, letting teams build consistent metrics across reports.",
-      date: "2026-09-12",
-      url: "https://lookerstudio.google.com",
-      impact: "Unifies metric definitions and adds predictive analytics to reports"
+      Date: "2026-09-12",
+      URL: "https://lookerstudio.google.com",
+      Impact: "Unifies metric definitions and adds predictive analytics to reports"
     }
   ];
 
   let seeded = 0;
   const errors: string[] = [];
   for (const tech of SEED_TECH) {
-    if (existingNames.has(tech.tool.toLowerCase())) continue;
+    if (existingNames.has(tech.Tool.toLowerCase())) continue;
     try {
       await createTechnology({ ...tech, createdAt: new Date().toISOString() });
       seeded++;
     } catch (e: any) {
-      errors.push(`${tech.tool}: ${e.message}`);
+      errors.push(`${tech.Tool}: ${e.message}`);
     }
   }
   return { seeded, errors: errors.length ? errors : undefined };

@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 
 interface TechUpdate {
   id?: string;
-  tool: string;
-  category: "RPA" | "Automation" | "BI";
+  Tool: string;
+  Category: "RPA" | "Automation" | "BI";
   "Recent Update": string;
-  date: string;
-  url: string;
-  impact: string;
+  Date: string;
+  URL: string;
+  Impact: string;
 }
 
 const CATEGORY_STYLES: Record<string, string> = {
@@ -78,24 +78,24 @@ export default function TechnologySection() {
         </thead>
         <tbody className="divide-y divide-slate-700/30">
           {updates.map((u) => (
-            <tr key={u.id || u.url} className="hover:bg-slate-800/30 transition-colors">
-              <td className="px-5 py-3 font-semibold text-white whitespace-nowrap">{u.tool}</td>
+            <tr key={u.id || u.URL} className="hover:bg-slate-800/30 transition-colors">
+              <td className="px-5 py-3 font-semibold text-white whitespace-nowrap">{u.Tool}</td>
               <td className="px-5 py-3">
-                <span className={`text-xs px-2 py-0.5 rounded-full border whitespace-nowrap ${CATEGORY_STYLES[u.category] || "bg-slate-500/15 text-slate-300 border-slate-500/30"}`}>
-                  {u.category}
+                <span className={`text-xs px-2 py-0.5 rounded-full border whitespace-nowrap ${CATEGORY_STYLES[u.Category] || "bg-slate-500/15 text-slate-300 border-slate-500/30"}`}>
+                  {u.Category}
                 </span>
               </td>
               <td className="px-5 py-3 text-slate-300 max-w-md">
                 <p className="line-clamp-2">{u["Recent Update"]}</p>
               </td>
-              <td className="px-5 py-3 text-slate-400 whitespace-nowrap">{u.date}</td>
+              <td className="px-5 py-3 text-slate-400 whitespace-nowrap">{u.Date}</td>
               <td className="px-5 py-3 text-slate-300 max-w-xs">
-                <p className="line-clamp-2 text-xs">{u.impact}</p>
+                <p className="line-clamp-2 text-xs">{u.Impact}</p>
               </td>
               <td className="px-5 py-3">
-                {u.url ? (
+                {u.URL ? (
                   <a
-                    href={u.url}
+                    href={u.URL}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-brand-300 hover:text-brand-200 transition-colors text-xs"
