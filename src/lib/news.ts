@@ -431,105 +431,102 @@ export async function seedTools(articles?: RawNewsAPIArticle[]): Promise<{ seede
   return { seeded };
 }
 
+const TECH_QUERIES: { tool: string; category: "RPA" | "Automation" | "BI" }[] = [
+  { tool: "UiPath", category: "RPA" },
+  { tool: "Automation Anywhere", category: "RPA" },
+  { tool: "Blue Prism", category: "RPA" },
+  { tool: "Make.com", category: "Automation" },
+  { tool: "N8N", category: "Automation" },
+  { tool: "Zapier", category: "Automation" },
+  { tool: "Power BI", category: "BI" },
+  { tool: "Tableau", category: "BI" },
+  { tool: "Looker Studio", category: "BI" }
+];
+
+async function fetchTechNewsFromNewsAPI(): Promise<RawNewsAPIArticle[]> {
+  const NEWSAPI_KEY = getNewsAPIKey();
+  const seen = new Set<string>();
+  const articles: RawNewsAPIArticle[] = [];
+
+  for (const q of TECH_QUERIES) {
+    const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(q.tool)}&language=en&sortBy=publishedAt&pageSize=5&apiKey=${NEWSAPI_KEY}`;
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) continue;
+      const data: NewsAPIResponse = await res.json();
+      for (const a of data.articles || []) {
+        if (!a.url || !a.title) continue;
+        if (seen.has(a.url)) continue;
+        seen.add(a.url);
+        articles.push(a);
+      }
+    } catch {
+      // ignore individual query failures
+    }
+  }
+  return articles.slice(0, 20);
+}
+
+function detectTechTool(article: RawNewsAPIArticle): { tool: string; category: "RPA" | "Automation" | "BI" } | null {
+  const hay = `${article.title || ""} ${article.description || ""}`.toLowerCase();
+  if (/(uipath)/i.test(hay)) return { tool: "UiPath", category: "RPA" };
+  if (/(automation anywhere)/i.test(hay)) return { tool: "Automation Anywhere", category: "RPA" };
+  if (/(blue prism)/i.test(hay)) return { tool: "Blue Prism", category: "RPA" };
+  if (/(make\.com|integromat)/i.test(hay)) return { tool: "Make.com", category: "Automation" };
+  if (/(n8n|n8n\.io)/i.test(hay)) return { tool: "N8N", category: "Automation" };
+  if (/(zapier)/i.test(hay)) return { tool: "Zapier", category: "Automation" };
+  if (/(power bi|powerbi)/i.test(hay)) return { tool: "Power BI", category: "BI" };
+  if (/(tableau)/i.test(hay)) return { tool: "Tableau", category: "BI" };
+  if (/(looker studio|looker)/i.test(hay)) return { tool: "Looker Studio", category: "BI" };
+  return null;
+}
+
+function extractReleaseName(title: string, tool: string): string {
+  const escaped = tool.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  let t = title.replace(new RegExp(`\\b${escaped}\\b`, "i"), "").trim();
+  t = t.replace(/^(released|launches?|announces?|introduces?|unveils?|ships?|gets?|adds?|brings?|now|with|for|the|a|an)\b/i, "").trim();
+  t = t.replace(/[.,;:!?]$/, "").trim();
+  return t || "—";
+}
+
 export async function seedTechnology(): Promise<{ seeded: number; errors?: string[] }> {
   const existing = await listTechnology(50);
-  const existingNames = new Set(
-    existing.map((r: any) => (r.fields?.Tool || "").toLowerCase())
+  const existingURLs = new Set(
+    existing.map((r: any) => (r.fields?.URL || "").toLowerCase())
   );
 
-  const SEED_TECH = [
-    {
-      Tool: "UiPath",
-      Category: "RPA",
-      Release: "Cartographer, Delegate",
-      Update: "UiPath released its Autumn 2026 suite featuring AI-powered document understanding and expanded generative process automation for enterprise workflows.",
-      Date: "2026-09-20",
-      URL: "https://www.uipath.com",
-      Impact: "Accelerates enterprise automation with native AI document processing"
-    },
-    {
-      Tool: "Automation Anywhere",
-      Category: "RPA",
-      Release: "Bot Store, IQ Bot",
-      Update: "Automation Anywhere launched a cloud-native bot store with pre-built AI automation packs for finance and HR departments.",
-      Date: "2026-09-18",
-      URL: "https://www.automationanywhere.com",
-      Impact: "Reduces RPA setup time with ready-made automation components"
-    },
-    {
-      Tool: "Blue Prism",
-      Category: "RPA",
-      Release: "Digital Workforce, Self-Learning",
-      Update: "Blue Prism introduced an intelligent digital workforce with real-time sentiment analysis and self-learning process models.",
-      Date: "2026-09-15",
-      URL: "https://www.blueprism.com",
-      Impact: "Enables autonomous process correction without manual retraining"
-    },
-    {
-      Tool: "Make.com",
-      Category: "Automation",
-      Release: "AI Scenario Templates, Visual Editor",
-      Update: "Make.com rolled out AI scenario templates and a visual scenario editor that connects over 1,000 apps with no-code automation.",
-      Date: "2026-09-21",
-      URL: "https://www.make.com",
-      Impact: "Allows non-developers to build multi-step AI workflows visually"
-    },
-    {
-      Tool: "N8N",
-      Category: "Automation",
-      Release: "Self-Hosted Engine, Custom Nodes",
-      Update: "N8N shipped a self-hosted AI workflow engine with custom node support, enabling teams to run proprietary automation pipelines on their own infrastructure.",
-      Date: "2026-09-19",
-      URL: "https://n8n.io",
-      Impact: "Provides data sovereignty for automation with extensible node framework"
-    },
-    {
-      Tool: "Zapier",
-      Category: "Automation",
-      Release: "AI Actions, 5,000+ Integrations",
-      Update: "Zapier added AI Actions that let workflows generate content, summarize data, and make decisions using large language models across 5,000+ integrations.",
-      Date: "2026-09-17",
-      URL: "https://zapier.com",
-      Impact: "Brings generative AI into existing no-code automation recipes"
-    },
-    {
-      Tool: "Power BI",
-      Category: "BI",
-      Release: "AI Insights, Q&A, Forecasting",
-      Update: "Microsoft Power BI introduced AI-powered insights, natural language Q&A, and auto-generated forecasting models for enterprise dashboards.",
-      Date: "2026-09-22",
-      URL: "https://www.microsoft.com/en-us/power-platform/products/power-bi",
-      Impact: "Lets business users query data in plain English with automatic trend forecasting"
-    },
-    {
-      Tool: "Tableau",
-      Category: "BI",
-      Release: "Data Storytelling, Anomaly Detection",
-      Update: "Tableau released AI-driven data storytelling and anomaly detection, highlighting unexpected trends across enterprise data sources.",
-      Date: "2026-09-14",
-      URL: "https://www.tableau.com",
-      Impact: "Surfaces anomalies automatically to reduce manual data inspection"
-    },
-    {
-      Tool: "Looker Studio",
-      Category: "BI",
-      Release: "ML Forecasts, Semantic Modeling",
-      Update: "Looker Studio added machine learning forecasts and semantic data modeling, letting teams build consistent metrics across reports.",
-      Date: "2026-09-12",
-      URL: "https://lookerstudio.google.com",
-      Impact: "Unifies metric definitions and adds predictive analytics to reports"
-    }
-  ];
+  const articles = await fetchTechNewsFromNewsAPI();
 
   let seeded = 0;
   const errors: string[] = [];
-  for (const tech of SEED_TECH) {
-    if (existingNames.has(tech.Tool.toLowerCase())) continue;
+  for (const a of articles) {
+    const detected = detectTechTool(a);
+    if (!detected) continue;
+    const url = a.url!.trim();
+    if (existingURLs.has(url.toLowerCase())) continue;
+
+    const tool = detected.tool;
+    const category = detected.category;
+    const release = extractReleaseName(a.title!, tool);
+    const update = simpleSummary(a.content || a.description) || a.title!;
+    const date = a.publishedAt ? new Date(a.publishedAt).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+    const impact = guessSentiment(`${a.title || ""} ${a.description || ""}`) === "positive"
+      ? "Positive market reception expected"
+      : "Monitor adoption and competitive response";
+
     try {
-      await createTechnology({ ...tech });
+      await createTechnology({
+        Tool: tool,
+        Category: category,
+        Release: release,
+        Update: update,
+        Date: date,
+        URL: url,
+        Impact: impact
+      });
       seeded++;
     } catch (e: any) {
-      errors.push(`${tech.Tool}: ${e.message}`);
+      errors.push(`${tool}: ${e.message}`);
     }
   }
   return { seeded, errors: errors.length ? errors : undefined };
