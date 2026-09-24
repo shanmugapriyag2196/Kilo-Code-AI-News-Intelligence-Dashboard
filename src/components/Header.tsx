@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { RefreshCw, Brain, Newspaper, TrendingUp, Globe, Wrench } from "lucide-react";
+import { RefreshCw, Brain, Newspaper, TrendingUp, Globe, Wrench, Cpu } from "lucide-react";
 
 export default function Header() {
   return (
@@ -24,6 +24,9 @@ export default function Header() {
             </Link>
             <Link href="/tools" className="text-sm text-slate-300 hover:text-white transition-colors flex items-center gap-2">
               <Wrench className="w-4 h-4" /> Tools
+            </Link>
+            <Link href="/technology" className="text-sm text-slate-300 hover:text-white transition-colors flex items-center gap-2">
+              <Cpu className="w-4 h-4" /> Technology
             </Link>
             <Link href="/dashboard" className="text-sm text-slate-300 hover:text-white transition-colors flex items-center gap-2">
               <TrendingUp className="w-4 h-4" /> Dashboard

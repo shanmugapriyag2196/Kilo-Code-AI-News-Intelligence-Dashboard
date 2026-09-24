@@ -16,7 +16,8 @@ export function getAirtableBase() {
     }).base(AIRTABLE_BASE_ID),
     articlesTable: process.env.AIRTABLE_ARTICLES_TABLE || "Articles",
     newsTable: process.env.AIRTABLE_NEWS_TABLE || "News",
-    toolsTable: process.env.AIRTABLE_TOOLS_TABLE || "Tools"
+    toolsTable: process.env.AIRTABLE_TOOLS_TABLE || "Tools",
+    technologyTable: process.env.AIRTABLE_TECHNOLOGY_TABLE || "Technology"
   };
 }
 
@@ -33,6 +34,11 @@ export function getNewsTable() {
 export function getToolsTable() {
   const { base, toolsTable } = getAirtableBase();
   return base(toolsTable);
+}
+
+export function getTechnologyTable() {
+  const { base, technologyTable } = getAirtableBase();
+  return base(technologyTable);
 }
 
 // Legacy alias for backward compat
@@ -304,6 +310,21 @@ export async function listTools(limit = 20) {
 
 export async function createTool(fields: Record<string, any>) {
   const table = getToolsTable();
+  const clean = stripEmptyFields(fields);
+  return (await table.create([{ fields: clean }]))[0];
+}
+
+export async function listTechnology(limit = 50) {
+  const table = getTechnologyTable();
+  const records = await table.select({
+    sort: [{ field: "createdAt", direction: "desc" }],
+    pageSize: limit
+  }).all();
+  return records;
+}
+
+export async function createTechnology(fields: Record<string, any>) {
+  const table = getTechnologyTable();
   const clean = stripEmptyFields(fields);
   return (await table.create([{ fields: clean }]))[0];
 }

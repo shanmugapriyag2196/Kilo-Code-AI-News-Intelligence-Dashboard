@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { refreshNews, refreshArticles, seedTools } from "@/lib/news";
+import { refreshNews, refreshArticles, seedTools, seedTechnology } from "@/lib/news";
 import { getStats } from "@/lib/airtable";
 
 export async function GET(req: NextRequest) {
@@ -7,11 +7,12 @@ export async function GET(req: NextRequest) {
     const newsResult = await refreshNews();
     const articlesResult = await refreshArticles();
     const toolsResult = await seedTools(articlesResult.articles);
+    const technologyResult = await seedTechnology();
     const stats = await getStats();
     const key = process.env.NEWSAPI_KEY || "";
     return NextResponse.json({
       success: true,
-      data: { news: newsResult, articles: articlesResult, tools: toolsResult },
+      data: { news: newsResult, articles: articlesResult, tools: toolsResult, technology: technologyResult },
       stats,
       env: {
         NEWSAPI_KEY: key ? `${key.slice(0, 4)}...${key.slice(-4)}` : "MISSING",
@@ -36,11 +37,12 @@ export async function POST(req: NextRequest) {
     const newsResult = await refreshNews();
     const articlesResult = await refreshArticles();
     const toolsResult = await seedTools(articlesResult.articles);
+    const technologyResult = await seedTechnology();
     const stats = await getStats();
     const key = process.env.NEWSAPI_KEY || "";
     return NextResponse.json({
       success: true,
-      data: { news: newsResult, articles: articlesResult, tools: toolsResult },
+      data: { news: newsResult, articles: articlesResult, tools: toolsResult, technology: technologyResult },
       stats,
       env: {
         NEWSAPI_KEY: key ? `${key.slice(0, 4)}...${key.slice(-4)}` : "MISSING",
@@ -49,7 +51,8 @@ export async function POST(req: NextRequest) {
         AIRTABLE_API_KEY: process.env.AIRTABLE_API_KEY ? "set" : "MISSING",
         AIRTABLE_NEWS_TABLE: process.env.AIRTABLE_NEWS_TABLE || "News",
         AIRTABLE_ARTICLES_TABLE: process.env.AIRTABLE_ARTICLES_TABLE || "Articles",
-        AIRTABLE_TOOLS_TABLE: process.env.AIRTABLE_TOOLS_TABLE || "Tools"
+        AIRTABLE_TOOLS_TABLE: process.env.AIRTABLE_TOOLS_TABLE || "Tools",
+        AIRTABLE_TECHNOLOGY_TABLE: process.env.AIRTABLE_TECHNOLOGY_TABLE || "Technology"
       }
     });
   } catch (e: any) {
@@ -65,7 +68,8 @@ export async function POST(req: NextRequest) {
         AIRTABLE_API_KEY: process.env.AIRTABLE_API_KEY ? "set" : "MISSING",
         AIRTABLE_NEWS_TABLE: process.env.AIRTABLE_NEWS_TABLE || "News",
         AIRTABLE_ARTICLES_TABLE: process.env.AIRTABLE_ARTICLES_TABLE || "Articles",
-        AIRTABLE_TOOLS_TABLE: process.env.AIRTABLE_TOOLS_TABLE || "Tools"
+        AIRTABLE_TOOLS_TABLE: process.env.AIRTABLE_TOOLS_TABLE || "Tools",
+        AIRTABLE_TECHNOLOGY_TABLE: process.env.AIRTABLE_TECHNOLOGY_TABLE || "Technology"
       }
     }, { status: 500 });
   }
